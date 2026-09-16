@@ -4,6 +4,8 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>מנהל תקציב ויעדים חכם</title>
+    <!-- טעינת ספריית Chart.js ליצירת דיאגרמת הפאי -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <style>
         *, *::before, *::after {
             box-sizing: border-box;
@@ -211,10 +213,6 @@
             user-select: none;
         }
 
-        .toggle-password-btn:hover {
-            color: var(--text-color);
-        }
-
         button.btn-primary {
             background-color: var(--primary);
             color: white;
@@ -292,6 +290,14 @@
             width: 0%;
             background-color: var(--primary);
             transition: width 0.3s, background-color 0.3s;
+        }
+
+        .chart-container {
+            position: relative;
+            width: 100%;
+            max-width: 320px;
+            margin: 0 auto;
+            height: 280px;
         }
 
         .category-group {
@@ -477,7 +483,6 @@
 
     <!-- מסך התחברות / הרשמה / איפוס סיסמה -->
     <div id="authSection" class="container auth-container">
-        <!-- טופס התחברות / הרשמה -->
         <div id="loginRegisterCard" class="card">
             <h2 id="authTitle">🔑 התחברות למערכת</h2>
             <div id="incognitoAlert" class="incognito-alert">
@@ -505,7 +510,6 @@
             </div>
         </div>
 
-        <!-- טופס שכחתי סיסמה -->
         <div id="forgotPasswordCard" class="card" style="display: none;">
             <h2>🔄 איפוס סיסמה</h2>
             <p style="font-size: 0.85rem; color: var(--subtext-color);">הזן את האימייל המשויך לחשבון שלך כדי לאפס את הסיסמה מיידית.</p>
@@ -614,6 +618,21 @@
             </div>
         </div>
 
+        <!-- דיאגרמת פאי קטגוריות -->
+        <div class="card">
+            <h2>🥧 פילוח קטגוריות (דיאגרמת עוגה)</h2>
+            <div style="display: flex; justify-content: center; margin-bottom: 12px;">
+                <select id="chartTypeFilter" onchange="updateUI()" style="max-width: 220px;">
+                    <option value="expense">הוצאות לפי קטגוריה</option>
+                    <option value="income">הכנסות לפי קטגוריה</option>
+                </select>
+            </div>
+            <div class="chart-container">
+                <canvas id="categoryPieChart"></canvas>
+            </div>
+            <p style="text-align: center; font-size: 0.78rem; color: var(--subtext-color); margin-top: 10px;">💡 טיפ: ניתן ללחוץ על מקטע בעוגה כדי לצפות בכל התנועות באותה קטגוריה.</p>
+        </div>
+
         <!-- סינון וחיפוש -->
         <div class="card">
             <h2>🔍 חיפוש וסינון תנועות</h2>
@@ -659,8 +678,16 @@
         </div>
     </div>
 
+    <!-- מודאל צפייה לעומק בקטגוריה מהעוגה -->
+    <div id="categoryDetailModal" class="modal">
+        <div class="modal-content">
+            <h3 id="modalCategoryTitle" style="margin: 0; border-bottom: 2px solid var(--border-color); padding-bottom: 8px;"></h3>
+            <div id="modalCategoryContent" style="max-height: 50vh; overflow-y: auto;"></div>
+            <button type="button" onclick="closeCategoryDetailModal()" style="margin-top: 10px;">סגור</button>
+        </div>
+    </div>
+
     <script>
-        // --- מנגנון אחסון מאובטח ועוקף חסימות לגלישה בסתר / Safari ---
         const safeStorage = (function() {
             let memoryStore = {};
             let isLocalStorageSupported = true;
@@ -671,31 +698,20 @@
                 window.localStorage.removeItem(testKey);
             } catch (e) {
                 isLocalStorageSupported = false;
-                console.warn("localStorage isn't supported or is blocked (Incognito mode). Using memory fallback.");
             }
 
             return {
                 getItem: function(key) {
                     if (isLocalStorageSupported) {
-                        try {
-                            return window.localStorage.getItem(key);
-                        } catch (e) {
-                            return memoryStore[key] || null;
-                        }
-                    } else {
-                        return memoryStore[key] || null;
-                    }
+                        try { return window.localStorage.getItem(key); }
+                        catch (e) { return memoryStore[key] || null; }
+                    } else { return memoryStore[key] || null; }
                 },
                 setItem: function(key, value) {
                     if (isLocalStorageSupported) {
-                        try {
-                            window.localStorage.setItem(key, value);
-                        } catch (e) {
-                            memoryStore[key] = String(value);
-                        }
-                    } else {
-                        memoryStore[key] = String(value);
-                    }
+                        try { window.localStorage.setItem(key, value); }
+                        catch (e) { memoryStore[key] = String(value); }
+                    } else { memoryStore[key] = String(value); }
                 },
                 isPrivate: !isLocalStorageSupported
             };
@@ -710,6 +726,7 @@
 
         let currentUser = null;
         let isSignUpMode = false;
+        let pieChartInstance = null;
 
         const monthsList = ["ינואר", "פברואר", "מרץ", "אפריל", "מאי", "יוני", "יולי", "אוגוסט", "ספטמבר", "אוקטובר", "נובמבר", "דצמבר"];
         const defaultCategoriesList = [
@@ -732,7 +749,7 @@
         let categoryColors = {};
         let categoryBudgets = {};
 
-        // DOM Elements
+        // Elements
         const authSection = document.getElementById('authSection');
         const appSection = document.getElementById('appSection');
         const loginRegisterCard = document.getElementById('loginRegisterCard');
@@ -754,7 +771,6 @@
         const forgotSuccess = document.getElementById('forgotSuccess');
 
         const userGreeting = document.getElementById('userGreeting');
-
         const selectedMonthEl = document.getElementById('selectedMonth');
         const selectedYearEl = document.getElementById('selectedYear');
         const financeForm = document.getElementById('financeForm');
@@ -776,6 +792,7 @@
         const progressBar = document.getElementById('progressBar');
         const searchInput = document.getElementById('searchInput');
         const filterPaymentMethod = document.getElementById('filterPaymentMethod');
+        const chartTypeFilter = document.getElementById('chartTypeFilter');
 
         function togglePasswordVisibility() {
             const btn = document.querySelector('.toggle-password-btn');
@@ -821,19 +838,14 @@
         }
 
         function getUsersDB() {
-            try {
-                return JSON.parse(safeStorage.getItem('app_users_db')) || {};
-            } catch (e) {
-                return {};
-            }
+            try { return JSON.parse(safeStorage.getItem('app_users_db')) || {}; }
+            catch (e) { return {}; }
         }
 
-        // מטפל באיפוס סיסמה ישירות מול מאגר המשתמשים המקומי
         forgotForm.addEventListener('submit', (e) => {
             e.preventDefault();
             forgotError.textContent = '';
             forgotSuccess.textContent = '';
-
             const email = forgotEmail.value.trim().toLowerCase();
             const newPass = newResetPassword.value;
 
@@ -850,18 +862,13 @@
 
             usersDB[email].password = newPass;
             safeStorage.setItem('app_users_db', JSON.stringify(usersDB));
-
             forgotSuccess.textContent = 'הסיסמה עודכנה בהצלחה! מעביר אותך להתחברות...';
-            setTimeout(() => {
-                showLoginSection();
-                authEmail.value = email;
-            }, 2000);
+            setTimeout(() => { showLoginSection(); authEmail.value = email; }, 2000);
         });
 
         authForm.addEventListener('submit', (e) => {
             e.preventDefault();
             authError.textContent = '';
-
             const email = authEmail.value.trim().toLowerCase();
             const password = authPassword.value;
 
@@ -871,29 +878,19 @@
             }
 
             let usersDB = getUsersDB();
-
             if (isSignUpMode) {
                 const fullName = authFullName.value.trim();
-                if (!fullName) {
-                    authError.textContent = 'נא להזין שם מלא';
-                    return;
-                }
-                if (usersDB[email]) {
-                    authError.textContent = 'משתמש עם אימייל זה כבר קיים במערכת!';
-                    return;
-                }
+                if (!fullName) { authError.textContent = 'נא להזין שם מלא'; return; }
+                if (usersDB[email]) { authError.textContent = 'משתמש עם אימייל זה כבר קיים במערכת!'; return; }
 
                 usersDB[email] = {
-                    email: email,
-                    password: password,
-                    fullName: fullName,
+                    email, password, fullName,
                     categories: defaultCategoriesList,
                     categoryColors: {},
                     categoryBudgets: {},
                     targetPercent: 80,
                     transactions: []
                 };
-
                 safeStorage.setItem('app_users_db', JSON.stringify(usersDB));
                 loginUser(usersDB[email]);
             } else {
@@ -907,12 +904,9 @@
 
         function loginUser(userData) {
             currentUser = userData;
-
             authSection.style.display = 'none';
             appSection.style.display = 'block';
-
             userGreeting.textContent = `היי, ${userData.fullName}`;
-
             loadUserData(userData);
             initDateSelectors();
             renderCategoriesSelect();
@@ -945,15 +939,12 @@
 
         function saveCurrentUserData() {
             if (!currentUser) return;
-
             let usersDB = getUsersDB();
-            
             currentUser.categories = categories;
             currentUser.categoryColors = categoryColors;
             currentUser.categoryBudgets = categoryBudgets;
             currentUser.targetPercent = parseFloat(targetPercentInput.value) || 80;
             currentUser.transactions = transactions;
-
             usersDB[currentUser.email] = currentUser;
             safeStorage.setItem('app_users_db', JSON.stringify(usersDB));
         }
@@ -961,21 +952,14 @@
         descInput.addEventListener('input', () => {
             const val = descInput.value.trim().toLowerCase();
             if (!val) return;
-
             for (const [catName, keywords] of Object.entries(autoKeywordsMap)) {
                 if (keywords.some(kw => val.includes(kw))) {
                     const matchedCategory = categories.find(c => c.includes(catName.split(' ')[0]));
-                    if (matchedCategory) {
-                        categoryInput.value = matchedCategory;
-                    } else if (categories.includes(catName)) {
-                        categoryInput.value = catName;
-                    }
+                    if (matchedCategory) categoryInput.value = matchedCategory;
+                    else if (categories.includes(catName)) categoryInput.value = catName;
 
-                    if (catName === 'משכורת והכנסות 💵') {
-                        typeInput.value = 'income';
-                    } else {
-                        typeInput.value = 'expense';
-                    }
+                    if (catName === 'משכורת והכנסות 💵') typeInput.value = 'income';
+                    else typeInput.value = 'expense';
                     break;
                 }
             }
@@ -983,27 +967,19 @@
 
         financeForm.addEventListener('submit', (e) => {
             e.preventDefault();
-
             const desc = descInput.value.trim();
             const amount = parseFloat(amountInput.value);
             const type = typeInput.value;
             const category = categoryInput.value;
             const paymentMethod = paymentMethodInput.value;
             const isFixed = isFixedInput.checked;
-
             const selectedMonth = parseInt(selectedMonthEl.value);
             const selectedYear = parseInt(selectedYearEl.value);
 
             const newTransaction = {
                 id: Date.now().toString(),
-                desc,
-                amount,
-                type,
-                category,
-                paymentMethod,
-                isFixed,
-                month: selectedMonth,
-                year: selectedYear,
+                desc, amount, type, category, paymentMethod, isFixed,
+                month: selectedMonth, year: selectedYear,
                 date: new Date().toISOString()
             };
 
@@ -1063,7 +1039,6 @@
                                         (t.isFixed && (t.year < selYear || (t.year === selYear && t.month <= selMonth)));
                 const matchesSearch = t.desc.toLowerCase().includes(searchTerm);
                 const matchesPayment = (selPayment === 'ALL' || t.paymentMethod === selPayment);
-
                 return isCorrectPeriod && matchesSearch && matchesPayment;
             });
 
@@ -1080,12 +1055,11 @@
             const usedPercent = totalIncome > 0 ? (totalExpense / totalIncome) * 100 : 0;
 
             totalIncomeEl.textContent = `${totalIncome.toLocaleString()} ₪`;
-            totalExpenseEl.textContent = `${totalExpense.toLocaleString()} ₪`;
+            totalExpenseEl.textContent =`${totalExpense.toLocaleString()} ₪`;
             netBalanceEl.textContent = `${netBalance.toLocaleString()} ₪`;
             usedPercentEl.textContent = `${usedPercent.toFixed(1)}%`;
 
             netBalanceBox.className = `summary-item ${netBalance < 0 ? 'alert-danger' : ''}`;
-            
             progressBar.style.width = `${Math.min(usedPercent, 100)}%`;
             if (usedPercent > targetPercent) {
                 progressBar.style.backgroundColor = 'var(--danger)';
@@ -1097,8 +1071,10 @@
                 targetStatus.style.color = 'var(--subtext-color)';
             }
 
-            groupedList.innerHTML = '';
+            // עדכון דיאגרמת העוגה
+            updatePieChart(filtered);
 
+            groupedList.innerHTML = '';
             categories.forEach(cat => {
                 const catItems = filtered.filter(t => t.category === cat);
                 if (catItems.length === 0) return;
@@ -1154,13 +1130,147 @@
                     ${budgetInfoHtml}
                     ${itemsHtml}
                 `;
-
                 groupedList.appendChild(catGroup);
             });
 
             if (groupedList.children.length === 0) {
                 groupedList.innerHTML = '<p style="text-align: center; color: var(--subtext-color);">אין תנועות להצגה בתקופה זו.</p>';
             }
+        }
+
+        // ניהול ציור והתאמת דיאגרמת הפאי
+        function updatePieChart(filteredTransactions) {
+            const chartType = chartTypeFilter.value; // 'expense' או 'income'
+            const activeCategories = [];
+            const dataValues = [];
+            const backgroundColors = [];
+
+            categories.forEach(cat => {
+                const sum = filteredTransactions
+                    .filter(t => t.category === cat && t.type === chartType)
+                    .reduce((acc, curr) => acc + curr.amount, 0);
+
+                if (sum > 0) {
+                    activeCategories.push(cat);
+                    dataValues.push(sum);
+                    backgroundColors.push(categoryColors[cat] || '#3498db');
+                }
+            });
+
+            const ctx = document.getElementById('categoryPieChart').getContext('2d');
+
+            if (pieChartInstance) {
+                pieChartInstance.destroy();
+            }
+
+            if (dataValues.length === 0) {
+                // הצגת עוגה ריקה במקרה אין נתונים
+                pieChartInstance = new Chart(ctx, {
+                    type: 'pie',
+                    data: {
+                        labels: ['אין נתונים להצגה'],
+                        datasets: [{ data: [1], backgroundColor: ['#cbd5e0'] }]
+                    },
+                    options: { responsive: true, maintainAspectRatio: false }
+                });
+                return;
+            }
+
+            pieChartInstance = new Chart(ctx, {
+                type: 'pie',
+                data: {
+                    labels: activeCategories,
+                    datasets: [{
+                        data: dataValues,
+                        backgroundColor: backgroundColors,
+                        borderWidth: 1
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: {
+                            position: 'bottom',
+                            labels: {
+                                font: { family: 'inherit', size: 12 },
+                                color: getComputedStyle(document.body).getPropertyValue('--text-color')
+                            }
+                        }
+                    },
+                    // אינטראקציה: לחיצה על חלק בעוגה פותחת את הפירוט לעומק
+                    onClick: (event, elements) => {
+                        if (elements.length > 0) {
+                            const index = elements[0].index;
+                            const clickedCategory = activeCategories[index];
+                            openCategoryDetailModal(clickedCategory, filteredTransactions, chartType);
+                        }
+                    }
+                }
+            });
+        }
+
+        // פתיחת מודאל צפייה לעומק לקטגוריה שנבחרה מהעוגה
+        function openCategoryDetailModal(categoryName, filteredTransactions, type) {
+            const modalTitle = document.getElementById('modalCategoryTitle');
+            const modalContent = document.getElementById('modalCategoryContent');
+            
+            modalTitle.textContent = `פירוט תנועות: ${categoryName}`;
+
+            const items = filteredTransactions.filter(t => t.category === categoryName && t.type === type);
+
+            if (items.length === 0) {
+                modalContent.innerHTML = '<p style="text-align: center; color: var(--subtext-color);">אין תנועות בקטגוריה זו.</p>';
+            } else {
+                let html = '<ul class="item-list">';
+                items.forEach(item => {
+                    const isIncome = item.type === 'income';
+                    html += `
+                        <li>
+                            <div class="item-details">
+                                <div>
+                                    ${item.isFixed ? '<span class="fixed-badge">קבוע</span>' : ''}
+                                    <strong>${item.desc}</strong>
+                                </div>
+                                <span class="item-subtext">${item.paymentMethod}</span>
+                            </div>
+                            <div style="display: flex; align-items: center; gap: 8px;">
+                                <span class="${isIncome ? 'tag-income' : 'tag-expense'}">
+                                    ${isIncome ? '+' : '-'}${item.amount.toLocaleString()} ₪
+                                </span>
+                                <button class="delete-btn" onclick="deleteTransactionFromModal('${item.id}', '${categoryName}', '${type}')">🗑️</button>
+                            </div>
+                        </li>
+                    `;
+                });
+                html += '</ul>';
+                modalContent.innerHTML = html;
+            }
+
+            document.getElementById('categoryDetailModal').style.display = 'flex';
+        }
+
+        function closeCategoryDetailModal() {
+            document.getElementById('categoryDetailModal').style.display = 'none';
+        }
+
+        function deleteTransactionFromModal(id, categoryName, type) {
+            deleteTransaction(id);
+            // רענון המודאל המקוף מיד לאחר המחיקה
+            const selMonth = parseInt(selectedMonthEl.value);
+            const selYear = parseInt(selectedYearEl.value);
+            const searchTerm = searchInput.value.trim().toLowerCase();
+            const selPayment = filterPaymentMethod.value;
+
+            const filtered = transactions.filter(t => {
+                const isCorrectPeriod = (t.month === selMonth && t.year === selYear) || 
+                                        (t.isFixed && (t.year < selYear || (t.year === selYear && t.month <= selMonth)));
+                const matchesSearch = t.desc.toLowerCase().includes(searchTerm);
+                const matchesPayment = (selPayment === 'ALL' || t.paymentMethod === selPayment);
+                return isCorrectPeriod && matchesSearch && matchesPayment;
+            });
+
+            openCategoryDetailModal(categoryName, filtered, type);
         }
 
         function deleteTransaction(id) {
@@ -1182,6 +1292,7 @@
             } else {
                 document.body.setAttribute('data-theme', 'dark');
             }
+            updateUI();
         }
 
         function openModal() {
@@ -1215,7 +1326,6 @@
         function renderManageCatList() {
             const listEl = document.getElementById('manageCatList');
             listEl.innerHTML = '';
-
             categories.forEach(cat => {
                 const div = document.createElement('div');
                 div.className = 'manage-cat-item';
