@@ -1,0 +1,994 @@
+<!DOCTYPE html>
+<html lang="he" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>מנהל תקציב ויעדים חכם</title>
+    <style>
+        :root {
+            --bg-color: #f4f7f6;
+            --card-bg: #ffffff;
+            --text-color: #333333;
+            --border-color: #edf2f7;
+            --subtext-color: #718096;
+            --primary: #2bc48a;
+            --danger: #e74c3c;
+            --accent: #3498db;
+            --input-bg: #ffffff;
+        }
+
+        [data-theme="dark"] {
+            --bg-color: #1a202c;
+            --card-bg: #2d3748;
+            --text-color: #f7fafc;
+            --border-color: #4a5568;
+            --subtext-color: #a0aec0;
+            --input-bg: #1a202c;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+            background-color: var(--bg-color);
+            color: var(--text-color);
+            margin: 0;
+            padding: 20px;
+            display: flex;
+            justify-content: center;
+            transition: background-color 0.3s, color 0.3s;
+        }
+
+        .container {
+            width: 100%;
+            max-width: 680px;
+        }
+
+        .auth-container {
+            max-width: 400px;
+            margin: 40px auto;
+        }
+
+        .header-top {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+        }
+
+        .user-greeting {
+            font-size: 1.2rem;
+            font-weight: bold;
+            color: var(--accent);
+            margin-top: 4px;
+        }
+
+        .user-actions {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        h1 {
+            margin: 0;
+            font-size: 1.8rem;
+        }
+
+        .btn-small {
+            padding: 6px 12px;
+            font-size: 0.85rem;
+            border-radius: 6px;
+            cursor: pointer;
+            border: 1px solid var(--border-color);
+            background: var(--card-bg);
+            color: var(--text-color);
+        }
+
+        .theme-toggle-btn {
+            background: none;
+            border: 1px solid var(--border-color);
+            color: var(--text-color);
+            padding: 8px 12px;
+            border-radius: 20px;
+            cursor: pointer;
+            font-size: 0.9rem;
+        }
+
+        .card {
+            background-color: var(--card-bg);
+            padding: 20px;
+            border-radius: 12px;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.05);
+            margin-bottom: 20px;
+        }
+
+        h2 {
+            margin-top: 0;
+            font-size: 1.15rem;
+            color: var(--text-color);
+            border-bottom: 2px solid var(--border-color);
+            padding-bottom: 8px;
+        }
+
+        .form-group {
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+            margin-top: 15px;
+        }
+
+        .form-row {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 10px;
+        }
+
+        input, select, button {
+            padding: 12px;
+            border: 1px solid var(--border-color);
+            border-radius: 8px;
+            font-size: 0.95rem;
+            background-color: var(--input-bg);
+            color: var(--text-color);
+        }
+
+        input:focus, select:focus {
+            outline: none;
+            border-color: var(--accent);
+        }
+
+        button.btn-primary {
+            background-color: var(--primary);
+            color: white;
+            font-weight: bold;
+            border: none;
+            cursor: pointer;
+        }
+
+        button.btn-primary:hover {
+            opacity: 0.9;
+        }
+
+        .checkbox-label {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            font-size: 0.9rem;
+            cursor: pointer;
+            margin-top: 5px;
+        }
+
+        .summary-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 12px;
+            margin-top: 15px;
+        }
+
+        .summary-item {
+            background-color: var(--bg-color);
+            padding: 12px;
+            border-radius: 8px;
+            text-align: center;
+        }
+
+        .summary-item span {
+            display: block;
+            font-size: 1.3rem;
+            font-weight: bold;
+            margin-top: 4px;
+        }
+
+        .income-text { color: var(--primary); }
+        .expense-text { color: var(--danger); }
+
+        .summary-item.alert-danger {
+            background-color: #fde8e8;
+            border: 1px solid var(--danger);
+        }
+        .summary-item.alert-danger span {
+            color: var(--danger) !important;
+        }
+
+        .progress-container {
+            width: 100%;
+            background-color: var(--border-color);
+            border-radius: 8px;
+            height: 12px;
+            margin-top: 8px;
+            overflow: hidden;
+        }
+
+        .progress-bar {
+            height: 100%;
+            width: 0%;
+            background-color: var(--primary);
+            transition: width 0.3s, background-color 0.3s;
+        }
+
+        .category-group {
+            background-color: var(--bg-color);
+            border-right: 6px solid var(--theme-color, #3498db);
+            border-radius: 8px;
+            padding: 12px 15px;
+            margin-bottom: 15px;
+        }
+
+        .category-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            font-weight: bold;
+            font-size: 1rem;
+            margin-bottom: 6px;
+        }
+
+        .category-budget-info {
+            font-size: 0.82rem;
+            color: var(--subtext-color);
+            margin-bottom: 8px;
+        }
+
+        .category-actions {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .category-total {
+            font-size: 0.85rem;
+            color: white;
+            background-color: var(--theme-color, #3498db);
+            padding: 2px 8px;
+            border-radius: 12px;
+        }
+
+        .color-picker-input {
+            width: 26px;
+            height: 26px;
+            padding: 0;
+            border: none;
+            background: none;
+            cursor: pointer;
+        }
+
+        ul.item-list {
+            list-style: none;
+            padding: 0;
+            margin: 0;
+        }
+
+        ul.item-list li {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 8px 0;
+            border-bottom: 1px solid var(--border-color);
+            font-size: 0.95rem;
+        }
+
+        ul.item-list li:last-child {
+            border-bottom: none;
+        }
+
+        .item-details {
+            display: flex;
+            flex-direction: column;
+            gap: 2px;
+        }
+
+        .item-subtext {
+            font-size: 0.8rem;
+            color: var(--subtext-color);
+        }
+
+        .fixed-badge {
+            font-size: 0.72rem;
+            background-color: var(--accent);
+            color: white;
+            padding: 1px 6px;
+            border-radius: 4px;
+            margin-right: 5px;
+        }
+
+        .tag-income { color: var(--primary); font-weight: bold; }
+        .tag-expense { color: var(--danger); font-weight: bold; }
+
+        .delete-btn {
+            background: none;
+            border: none;
+            color: var(--subtext-color);
+            cursor: pointer;
+            font-size: 1.1rem;
+        }
+
+        .delete-btn:hover { color: var(--danger); }
+
+        .modal {
+            display: none;
+            position: fixed;
+            top: 0; left: 0; width: 100%; height: 100%;
+            background: rgba(0,0,0,0.5);
+            justify-content: center;
+            align-items: center;
+            z-index: 1000;
+        }
+
+        .modal-content {
+            background: var(--card-bg);
+            padding: 20px;
+            border-radius: 12px;
+            width: 90%;
+            max-width: 450px;
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+            max-height: 80vh;
+            overflow-y: auto;
+        }
+
+        .manage-cat-item {
+            display: flex;
+            flex-direction: column;
+            gap: 6px;
+            padding: 10px;
+            background: var(--bg-color);
+            border-radius: 6px;
+        }
+
+        .manage-cat-row {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .auth-toggle-link {
+            color: var(--accent);
+            cursor: pointer;
+            text-align: center;
+            font-size: 0.9rem;
+            margin-top: 10px;
+        }
+
+        .error-message {
+            color: var(--danger);
+            font-size: 0.85rem;
+            margin-top: 5px;
+        }
+    </style>
+</head>
+<body>
+
+    <!-- מסך התחברות / הרשמה -->
+    <div id="authSection" class="container auth-container">
+        <div class="card">
+            <h2 id="authTitle">🔑 התחברות למערכת</h2>
+            <form id="authForm" class="form-group">
+                <input type="text" id="authFullName" placeholder="שם מלא (בעברית או אנגלית)" style="display: none;">
+                <input type="email" id="authEmail" placeholder="כתובת אימייל" required>
+                <input type="password" id="authPassword" placeholder="סיסמה (לפחות 6 תווים כלשהם)" minlength="6" required>
+                <div id="authError" class="error-message"></div>
+                <button type="submit" id="authSubmitBtn" class="btn-primary">התחבר</button>
+            </form>
+            <div id="authToggleLink" class="auth-toggle-link" onclick="toggleAuthMode()">
+                אין לך חשבון? לחץ כאן להרשמה
+            </div>
+        </div>
+    </div>
+
+    <!-- מסך האפליקציה הראשי -->
+    <div id="appSection" class="container" style="display: none;">
+        <div class="header-top">
+            <div>
+                <h1>💰 מנהל תקציב ויעדים</h1>
+                <div id="userGreeting" class="user-greeting">היי, </div>
+            </div>
+            <div class="user-actions">
+                <button id="themeToggle" class="theme-toggle-btn" onclick="toggleTheme()">🌙 מצב לילה</button>
+                <button class="btn-small" onclick="logout()">התנתק 🚪</button>
+            </div>
+        </div>
+
+        <!-- בחירת חודש/שנה -->
+        <div class="card">
+            <h2>📅 בחירת תקופה לתצוגה</h2>
+            <div class="form-row" style="margin-top: 10px;">
+                <select id="selectedMonth" onchange="updateUI()"></select>
+                <select id="selectedYear" onchange="updateUI()"></select>
+            </div>
+        </div>
+
+        <!-- יעד הוצאות חודשי -->
+        <div class="card">
+            <h2>🎯 יעד הוצאות חודשי כולל</h2>
+            <div class="form-group">
+                <label>אחוז הוצאות מקסימלי מתוך ההכנסות (%):</label>
+                <input type="number" id="targetPercent" value="80" min="1" max="100" onchange="saveCurrentUserData()">
+            </div>
+            <div class="progress-container">
+                <div id="progressBar" class="progress-bar"></div>
+            </div>
+            <p id="targetStatus" style="font-size: 0.85rem; color: var(--subtext-color); margin-top: 8px;"></p>
+        </div>
+
+        <!-- הוספת תנועה -->
+        <div class="card">
+            <h2>➕ הוספת תנועה חדשה</h2>
+            <form id="financeForm" class="form-group">
+                <input type="text" id="desc" placeholder="תיאור (לדוגמה: משכורת, דלק, רמי לוי)" required>
+
+                <div class="form-row">
+                    <input type="number" id="amount" step="0.01" placeholder="סכום (בש״ח)" required>
+                    <select id="type">
+                        <option value="expense">הוצאה 📉</option>
+                        <option value="income">הכנסה 📈</option>
+                    </select>
+                </div>
+
+                <div class="form-row">
+                    <select id="category"></select>
+                    <select id="paymentMethod">
+                        <option value="כרטיס אשראי">💳 כרטיס אשראי</option>
+                        <option value="מזומן">💵 מזומן</option>
+                        <option value="העברה בנקאית">🏦 העברה בנקאית</option>
+                        <option value="ביט / פייבוקס">📱 ביט / פייבוקס</option>
+                        <option value="צ׳ק">📝 צ׳ק</option>
+                    </select>
+                </div>
+
+                <label class="checkbox-label">
+                    <input type="checkbox" id="isFixed"> 📌 לסמן כהוצאה/הכנסה קבועה חודשית
+                </label>
+
+                <button type="submit" class="btn-primary">הוסף תנועה</button>
+            </form>
+        </div>
+
+        <!-- סיכום חודשי -->
+        <div class="card">
+            <h2>📊 סיכום חודשי</h2>
+            <div class="summary-grid">
+                <div class="summary-item">
+                    הכנסות
+                    <span id="totalIncome" class="income-text">0 ₪</span>
+                </div>
+                <div class="summary-item">
+                    הוצאות
+                    <span id="totalExpense" class="expense-text">0 ₪</span>
+                </div>
+                <div class="summary-item" id="netBalanceBox">
+                    מאזן נטו
+                    <span id="netBalance">0 ₪</span>
+                </div>
+                <div class="summary-item" id="usedPercentBox">
+                    ניצול תקציב
+                    <span id="usedPercent">0%</span>
+                </div>
+            </div>
+        </div>
+
+        <!-- סינון וחיפוש -->
+        <div class="card">
+            <h2>🔍 חיפוש וסינון תנועות</h2>
+            <div class="form-row" style="margin-top: 10px;">
+                <input type="text" id="searchInput" placeholder="חפש לפי תיאור..." oninput="updateUI()">
+                <select id="filterPaymentMethod" onchange="updateUI()">
+                    <option value="ALL">כל אמצעי התשלום</option>
+                    <option value="כרטיס אשראי">💳 כרטיס אשראי</option>
+                    <option value="מזומן">💵 מזומן</option>
+                    <option value="העברה בנקאית">🏦 העברה בנקאית</option>
+                    <option value="ביט / פייבוקס">📱 ביט / פייבוקס</option>
+                    <option value="צ׳ק">📝 צ׳ק</option>
+                </select>
+            </div>
+        </div>
+
+        <!-- תנועות לפי קטגוריה -->
+        <div class="card">
+            <h2>📂 תנועות לפי קטגוריה</h2>
+            <div id="groupedList"></div>
+        </div>
+    </div>
+
+    <!-- מודאל ניהול נושאים ותקציב יעד -->
+    <div id="manageCatModal" class="modal">
+        <div class="modal-content">
+            <h3 style="margin: 0;">⚙️ ניהול נושאים ותקציב יעד</h3>
+
+            <div>
+                <label style="font-size: 0.85rem; font-weight: bold;">הוסף נושא חדש:</label>
+                <div style="display: flex; gap: 8px; margin-top: 6px;">
+                    <input type="text" id="newCatName" placeholder="שם הנושא" style="flex: 1;">
+                    <button type="button" class="btn-primary" onclick="saveNewCategory()">הוסף</button>
+                </div>
+            </div>
+
+            <hr style="border: 0; border-top: 1px solid var(--border-color); margin: 5px 0;">
+
+            <label style="font-size: 0.85rem; font-weight: bold;">תקציב מקסימלי לרשות לפי קטגוריה (בש״ח):</label>
+            <div id="manageCatList"></div>
+
+            <button type="button" onclick="closeModal()" style="margin-top: 10px;">סגור ושמור</button>
+        </div>
+    </div>
+
+    <script>
+        let currentUser = null;
+        let isSignUpMode = false;
+
+        const monthsList = ["ינואר", "פברואר", "מרץ", "אפריל", "מאי", "יוני", "יולי", "אוגוסט", "ספטמבר", "אוקטובר", "נובמבר", "דצמבר"];
+        const defaultCategoriesList = [
+            "כללי 📦", "משכורת והכנסות 💵", "רכב 🚗", "אוכל וסופר 🛒",
+            "פנאי, חוגים וספורט 🥋", "חשבונות ודיור 🏠", "השקעות וחיסכון 📈"
+        ];
+        const palette = ["#3498db", "#2ecc71", "#e67e22", "#9b59b6", "#e74c3c", "#1abc9c", "#f1c40f", "#34495e"];
+
+        const autoKeywordsMap = {
+            'משכורת והכנסות 💵': ['משכורת', 'שכר', 'בונוס', 'הפקדה', 'מזומן', 'העברה', 'דיבידנד', 'הכנסה'],
+            'רכב 🚗': ['דלק', 'רכב', 'טסט', 'מוסך', 'ביטוח רכב', 'חניה', 'פנצ\'ר', 'טיפול', 'קארפליי', 'כביש 6', 'פז', 'סונול', 'דלקון', 'מנוי מפתח'],
+            'אוכל וסופר 🛒': ['סופר', 'רמי לוי', 'שופרסל', 'מסעדה', 'אוכל', 'פיצה', 'מקדונלדס', 'קפה', 'מאפיה', 'וולט', 'wolt', 'מכולת', 'בשר', 'פירות', 'ירקות', 'קניות'],
+            'פנאי, חוגים וספורט 🥋': ['חוג', 'אימון', 'חדר כושר', 'ספורט', 'סרט', 'הופעה', 'מלון', 'טיסה', 'חופשה', 'גיימינג', 'בריכה', 'ברייקדאנס', 'טניס', 'מוזיאון'],
+            'חשבונות ודיור 🏠': ['חשמל', 'ארנונה', 'מים', 'אינטרנט', 'שכר דירה', 'ועד בית', 'גז', 'שכירות', 'יס', 'הוט', 'סלולר', 'פלאפון'],
+            'השקעות וחיסכון 📈': ['מניות', 'קופת גמל', 'קרן השתלמות', 'קריפטו', 'ביטקוין', 'חיסכון', 'השקעה', 'ניירות ערך']
+        };
+
+        let transactions = [];
+        let categories = [...defaultCategoriesList];
+        let categoryColors = {};
+        let categoryBudgets = {};
+
+        // DOM elements
+        const authSection = document.getElementById('authSection');
+        const appSection = document.getElementById('appSection');
+        const authForm = document.getElementById('authForm');
+        const authTitle = document.getElementById('authTitle');
+        const authFullName = document.getElementById('authFullName');
+        const authEmail = document.getElementById('authEmail');
+        const authPassword = document.getElementById('authPassword');
+        const authSubmitBtn = document.getElementById('authSubmitBtn');
+        const authToggleLink = document.getElementById('authToggleLink');
+        const authError = document.getElementById('authError');
+        const userGreeting = document.getElementById('userGreeting');
+
+        const selectedMonthEl = document.getElementById('selectedMonth');
+        const selectedYearEl = document.getElementById('selectedYear');
+        const financeForm = document.getElementById('financeForm');
+        const descInput = document.getElementById('desc');
+        const amountInput = document.getElementById('amount');
+        const typeInput = document.getElementById('type');
+        const categoryInput = document.getElementById('category');
+        const paymentMethodInput = document.getElementById('paymentMethod');
+        const isFixedInput = document.getElementById('isFixed');
+        const targetPercentInput = document.getElementById('targetPercent');
+
+        const totalIncomeEl = document.getElementById('totalIncome');
+        const totalExpenseEl = document.getElementById('totalExpense');
+        const netBalanceEl = document.getElementById('netBalance');
+        const usedPercentEl = document.getElementById('usedPercent');
+        const netBalanceBox = document.getElementById('netBalanceBox');
+        const usedPercentBox = document.getElementById('usedPercentBox');
+        const groupedList = document.getElementById('groupedList');
+        const targetStatus = document.getElementById('targetStatus');
+        const progressBar = document.getElementById('progressBar');
+        const searchInput = document.getElementById('searchInput');
+        const filterPaymentMethod = document.getElementById('filterPaymentMethod');
+
+        // --- Auth System ---
+        function toggleAuthMode() {
+            isSignUpMode = !isSignUpMode;
+            authError.textContent = '';
+            if (isSignUpMode) {
+                authTitle.textContent = '📝 הרשמה למערכת';
+                authFullName.style.display = 'block';
+                authFullName.required = true;
+                authSubmitBtn.textContent = 'הירשם והתחבר';
+                authToggleLink.textContent = 'כבר יש לך חשבון? לחץ כאן להתחברות';
+            } else {
+                authTitle.textContent = '🔑 התחברות למערכת';
+                authFullName.style.display = 'none';
+                authFullName.required = false;
+                authSubmitBtn.textContent = 'התחבר';
+                authToggleLink.textContent = 'אין לך חשבון? לחץ כאן להרשמה';
+            }
+        }
+
+        authForm.addEventListener('submit', (e) => {
+            e.preventDefault();
+            authError.textContent = '';
+
+            const email = authEmail.value.trim().toLowerCase();
+            const password = authPassword.value;
+
+            if (password.length < 6) {
+                authError.textContent = 'הסיסמה חייבת להכיל לפחות 6 תווים!';
+                return;
+            }
+
+            let usersDB = JSON.parse(localStorage.getItem('app_users_db')) || {};
+
+            if (isSignUpMode) {
+                const fullName = authFullName.value.trim();
+                if (!fullName) {
+                    authError.textContent = 'נא להזין שם מלא';
+                    return;
+                }
+                if (usersDB[email]) {
+                    authError.textContent = 'משתמש עם אימייל זה כבר קיים במערכת!';
+                    return;
+                }
+
+                usersDB[email] = {
+                    email: email,
+                    password: password,
+                    fullName: fullName,
+                    categories: defaultCategoriesList,
+                    categoryColors: {},
+                    categoryBudgets: {},
+                    targetPercent: 80,
+                    transactions: []
+                };
+
+                localStorage.setItem('app_users_db', JSON.stringify(usersDB));
+                loginUser(usersDB[email]);
+            } else {
+                if (!usersDB[email] || usersDB[email].password !== password) {
+                    authError.textContent = 'פרטי התחברות שגויים (אימייל או סיסמה לא נכונים)';
+                    return;
+                }
+                loginUser(usersDB[email]);
+            }
+        });
+
+        function loginUser(userData) {
+            currentUser = userData;
+            localStorage.setItem('app_current_user_email', userData.email);
+
+            authSection.style.display = 'none';
+            appSection.style.display = 'block';
+
+            userGreeting.textContent = `היי, ${userData.fullName}`;
+
+            loadUserData(userData);
+            initDateSelectors();
+            renderCategoriesSelect();
+            updateUI();
+        }
+
+        function logout() {
+            currentUser = null;
+            localStorage.removeItem('app_current_user_email');
+            authSection.style.display = 'block';
+            appSection.style.display = 'none';
+            authForm.reset();
+        }
+
+        function loadUserData(userData) {
+            categories = userData.categories || defaultCategoriesList;
+            categoryColors = userData.categoryColors || {};
+            categoryBudgets = userData.categoryBudgets || {};
+            targetPercentInput.value = userData.targetPercent || 80;
+            transactions = userData.transactions || [];
+        }
+
+        function saveCurrentUserData() {
+            if (!currentUser) return;
+
+            let usersDB = JSON.parse(localStorage.getItem('app_users_db')) || {};
+            
+            currentUser.categories = categories;
+            currentUser.categoryColors = categoryColors;
+            currentUser.categoryBudgets = categoryBudgets;
+            currentUser.targetPercent = parseFloat(targetPercentInput.value) || 80;
+            currentUser.transactions = transactions;
+
+            usersDB[currentUser.email] = currentUser;
+            localStorage.setItem('app_users_db', JSON.stringify(usersDB));
+        }
+
+        function checkExistingSession() {
+            const savedEmail = localStorage.getItem('app_current_user_email');
+            if (savedEmail) {
+                let usersDB = JSON.parse(localStorage.getItem('app_users_db')) || {};
+                if (usersDB[savedEmail]) {
+                    loginUser(usersDB[savedEmail]);
+                }
+            }
+        }
+
+        // --- Auto Keyword Match ---
+        descInput.addEventListener('input', () => {
+            const val = descInput.value.trim().toLowerCase();
+            if (!val) return;
+
+            for (const [catName, keywords] of Object.entries(autoKeywordsMap)) {
+                if (keywords.some(kw => val.includes(kw))) {
+                    const matchedCategory = categories.find(c => c.includes(catName.split(' ')[0]));
+                    if (matchedCategory) {
+                        categoryInput.value = matchedCategory;
+                    } else if (categories.includes(catName)) {
+                        categoryInput.value = catName;
+                    }
+
+                    if (catName === 'משכורת והכנסות 💵') {
+                        typeInput.value = 'income';
+                    } else {
+                        typeInput.value = 'expense';
+                    }
+                    break;
+                }
+            }
+        });
+
+        financeForm.addEventListener('submit', (e) => {
+            e.preventDefault();
+            if (!currentUser) return;
+
+            const newT = {
+                id: Date.now().toString(),
+                desc: descInput.value,
+                amount: parseFloat(amountInput.value),
+                type: typeInput.value,
+                category: categoryInput.value,
+                paymentMethod: paymentMethodInput.value,
+                isFixed: isFixedInput.checked,
+                month: parseInt(selectedMonthEl.value),
+                year: parseInt(selectedYearEl.value)
+            };
+
+            transactions.push(newT);
+            saveCurrentUserData();
+
+            descInput.value = '';
+            amountInput.value = '';
+            isFixedInput.checked = false;
+            updateUI();
+        });
+
+        function deleteTransaction(id) {
+            transactions = transactions.filter(t => t.id !== id);
+            saveCurrentUserData();
+            updateUI();
+        }
+
+        function initDateSelectors() {
+            const now = new Date();
+            selectedMonthEl.innerHTML = '';
+            selectedYearEl.innerHTML = '';
+
+            monthsList.forEach((m, idx) => {
+                const opt = document.createElement('option');
+                opt.value = idx;
+                opt.textContent = m;
+                if (idx === now.getMonth()) opt.selected = true;
+                selectedMonthEl.appendChild(opt);
+            });
+
+            const currentYear = now.getFullYear();
+            for (let y = currentYear - 2; y <= currentYear + 3; y++) {
+                const opt = document.createElement('option');
+                opt.value = y;
+                opt.textContent = y;
+                if (y === currentYear) opt.selected = true;
+                selectedYearEl.appendChild(opt);
+            }
+        }
+
+        function toggleTheme() {
+            const currentTheme = document.body.getAttribute('data-theme');
+            const newTheme = currentTheme === 'dark' ? 'light' : 'dark';
+            document.body.setAttribute('data-theme', newTheme);
+            document.getElementById('themeToggle').textContent = newTheme === 'dark' ? '☀️ מצב יום' : '🌙 מצב לילה';
+            localStorage.setItem('theme', newTheme);
+        }
+
+        if (localStorage.getItem('theme') === 'dark') {
+            document.body.setAttribute('data-theme', 'dark');
+            document.getElementById('themeToggle').textContent = '☀️ מצב יום';
+        }
+
+        function renderCategoriesSelect() {
+            categoryInput.innerHTML = '';
+            categories.forEach(cat => {
+                const opt = document.createElement('option');
+                opt.value = cat;
+                opt.textContent = cat;
+                categoryInput.appendChild(opt);
+            });
+            const addOpt = document.createElement('option');
+            addOpt.value = "__MANAGE__";
+            addOpt.textContent = "⚙️ ניהול נושאים ותקציב...";
+            categoryInput.appendChild(addOpt);
+        }
+
+        categoryInput.addEventListener('change', () => {
+            if (categoryInput.value === '__MANAGE__') {
+                renderManageModalList();
+                document.getElementById('manageCatModal').style.display = 'flex';
+                categoryInput.value = categories[0] || '';
+            }
+        });
+
+        function closeModal() {
+            document.getElementById('manageCatModal').style.display = 'none';
+            saveCurrentUserData();
+            updateUI();
+        }
+
+        function renderManageModalList() {
+            const list = document.getElementById('manageCatList');
+            list.innerHTML = '';
+            categories.forEach(cat => {
+                const bVal = categoryBudgets[cat] || '';
+                const item = document.createElement('div');
+                item.className = 'manage-cat-item';
+                item.innerHTML = `
+                    <div class="manage-cat-row">
+                        <strong>${cat}</strong>
+                        <button class="delete-btn" onclick="deleteCategory('${cat}')">✕</button>
+                    </div>
+                    <div class="manage-cat-row">
+                        <span style="font-size:0.8rem;">תקציב יעד (ש״ח):</span>
+                        <input type="number" value="${bVal}" placeholder="ללא יעד" style="width: 120px; padding: 4px;" onchange="updateCatBudget('${cat}', this.value)">
+                    </div>
+                `;
+                list.appendChild(item);
+            });
+        }
+
+        function updateCatBudget(cat, val) {
+            if (val === '' || parseFloat(val) <= 0) {
+                delete categoryBudgets[cat];
+            } else {
+                categoryBudgets[cat] = parseFloat(val);
+            }
+        }
+
+        function saveNewCategory() {
+            const name = document.getElementById('newCatName').value.trim();
+            if (!name) return;
+            const fullName = `${name} 📌`;
+            if (!categories.includes(fullName)) {
+                categories.push(fullName);
+                renderCategoriesSelect();
+                renderManageModalList();
+            }
+            document.getElementById('newCatName').value = '';
+        }
+
+        function deleteCategory(cat) {
+            categories = categories.filter(c => c !== cat);
+            delete categoryBudgets[cat];
+            renderCategoriesSelect();
+            renderManageModalList();
+        }
+
+        function changeCategoryColor(catName, color) {
+            categoryColors[catName] = color;
+            saveCurrentUserData();
+            updateUI();
+        }
+
+        function updateUI() {
+            const curM = parseInt(selectedMonthEl.value);
+            const curY = parseInt(selectedYearEl.value);
+            const searchVal = searchInput.value.toLowerCase();
+            const filterPM = filterPaymentMethod.value;
+
+            const filtered = transactions.filter(t => {
+                const matchesDate = (t.month === curM && t.year === curY) || t.isFixed;
+                const matchesSearch = t.desc.toLowerCase().includes(searchVal);
+                const matchesPM = filterPM === 'ALL' || t.paymentMethod === filterPM;
+                return matchesDate && matchesSearch && matchesPM;
+            });
+
+            let totalIncome = 0;
+            let totalExpense = 0;
+            const groups = {};
+
+            filtered.forEach(t => {
+                if (t.type === 'income') totalIncome += t.amount;
+                else totalExpense += t.amount;
+
+                if (!groups[t.category]) {
+                    groups[t.category] = { name: t.category, items: [], type: t.type, totalSum: 0 };
+                }
+                groups[t.category].items.push(t);
+                groups[t.category].totalSum += t.amount;
+            });
+
+            const catArray = Object.values(groups);
+            catArray.sort((a, b) => {
+                if (a.type === 'income' && b.type === 'expense') return -1;
+                if (a.type === 'expense' && b.type === 'income') return 1;
+                return b.totalSum - a.totalSum;
+            });
+
+            groupedList.innerHTML = '';
+
+            if (catArray.length === 0) {
+                groupedList.innerHTML = '<p style="color: var(--subtext-color); text-align: center;">אין תנועות להצגה לתקופה זו</p>';
+            } else {
+                catArray.forEach((group, idx) => {
+                    group.items.sort((a, b) => b.amount - a.amount);
+                    const catColor = categoryColors[group.name] || palette[idx % palette.length];
+
+                    const catBox = document.createElement('div');
+                    catBox.className = 'category-group';
+                    catBox.style.setProperty('--theme-color', catColor);
+
+                    let budgetInfoHtml = '';
+                    const catBudget = categoryBudgets[group.name];
+                    if (catBudget && group.type === 'expense') {
+                        const isExceeded = group.totalSum > catBudget;
+                        const pct = ((group.totalSum / catBudget) * 100).toFixed(0);
+                        budgetInfoHtml = `
+                            <div class="category-budget-info" style="${isExceeded ? 'color: var(--danger); font-weight: bold;' : ''}">
+                                יעד קטגוריה: ${catBudget.toLocaleString()} ₪ (${pct}% ניצול) ${isExceeded ? '🚨 חריגה!' : ''}
+                            </div>
+                        `;
+                    }
+
+                    let itemsHtml = '';
+                    group.items.forEach(t => {
+                        const isInc = t.type === 'income';
+                        const fixedBadge = t.isFixed ? `<span class="fixed-badge">קבועה</span>` : '';
+                        itemsHtml += `
+                            <li>
+                                <div class="item-details">
+                                    <span>${fixedBadge}${t.desc}</span>
+                                    <div class="item-subtext">${t.paymentMethod}</div>
+                                </div>
+                                <div>
+                                    <span class="${isInc ? 'tag-income' : 'tag-expense'}">
+                                        ${isInc ? '+' : '-'}${t.amount.toLocaleString()} ₪
+                                    </span>
+                                    <button class="delete-btn" onclick="deleteTransaction('${t.id}')">✕</button>
+                                </div>
+                            </li>
+                        `;
+                    });
+
+                    catBox.innerHTML = `
+                        <div class="category-header">
+                            <span>${group.name}</span>
+                            <div class="category-actions">
+                                <span class="category-total">סה״כ: ${group.totalSum.toLocaleString()} ₪</span>
+                                <input type="color" class="color-picker-input" value="${catColor}" onchange="changeCategoryColor('${group.name}', this.value)">
+                            </div>
+                        </div>
+                        ${budgetInfoHtml}
+                        <ul class="item-list">${itemsHtml}</ul>
+                    `;
+                    groupedList.appendChild(catBox);
+                });
+            }
+
+            const netBalance = totalIncome - totalExpense;
+            const targetPercent = parseFloat(targetPercentInput.value) || 80;
+            const usedPercent = totalIncome > 0 ? ((totalExpense / totalIncome) * 100) : 0;
+
+            totalIncomeEl.textContent = `${totalIncome.toLocaleString()} ₪`;
+            totalExpenseEl.textContent = `${totalExpense.toLocaleString()} ₪`;
+            netBalanceEl.textContent = `${netBalance.toLocaleString()} ₪`;
+            usedPercentEl.textContent = `${usedPercent.toFixed(1)}%`;
+
+            progressBar.style.width = `${Math.min(usedPercent, 100)}%`;
+
+            if (usedPercent > targetPercent || netBalance < 0) {
+                targetStatus.textContent = `🚨 אזהרה: חריגה מהיעד! ניצול של ${usedPercent.toFixed(1)}% מתוך יעד של ${targetPercent}%.`;
+                targetStatus.style.color = 'var(--danger)';
+                progressBar.style.backgroundColor = 'var(--danger)';
+                usedPercentBox.classList.add('alert-danger');
+                if (netBalance < 0) netBalanceBox.classList.add('alert-danger');
+            } else {
+                targetStatus.textContent = `✅ עומד ביעד! נשאר לפחות ${(100 - targetPercent)}% לחיסכון והשקעה.`;
+                targetStatus.style.color = 'var(--primary)';
+                progressBar.style.backgroundColor = 'var(--primary)';
+                usedPercentBox.classList.remove('alert-danger');
+                netBalanceBox.classList.remove('alert-danger');
+            }
+        }
+
+        // בדיקה אוטומטית בהפעלה ראשונית
+        checkExistingSession();
+    </script>
+</body>
+</html>
