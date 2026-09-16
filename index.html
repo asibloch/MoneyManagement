@@ -454,6 +454,17 @@
             font-size: 0.85rem;
             margin-top: 5px;
         }
+
+        .incognito-alert {
+            background-color: #fff3cd;
+            color: #856404;
+            padding: 8px 12px;
+            border-radius: 6px;
+            font-size: 0.8rem;
+            margin-bottom: 10px;
+            display: none;
+            border: 1px solid #ffeeba;
+        }
     </style>
 </head>
 <body>
@@ -462,12 +473,15 @@
     <div id="authSection" class="container auth-container">
         <div class="card">
             <h2 id="authTitle">🔑 התחברות למערכת</h2>
+            <div id="incognitoAlert" class="incognito-alert">
+                ℹ️ גלישה בסתר פעילה: הנתונים יישמרו רק לסשן הנוכחי.
+            </div>
             <form id="authForm" class="form-group">
                 <input type="text" id="authFullName" placeholder="שם מלא (בעברית או אנגלית)" style="display: none;">
-                <input type="email" id="authEmail" placeholder="כתובת אימייל" required>
+                <input type="email" id="authEmail" placeholder="כתובת אימייל" autocomplete="email" required>
                 
                 <div class="password-wrapper">
-                    <input type="password" id="authPassword" placeholder="סיסמה (לפחות 6 תווים)" minlength="6" required>
+                    <input type="password" id="authPassword" placeholder="סיסמה (לפחות 6 תווים)" minlength="6" autocomplete="current-password" required>
                     <button type="button" class="toggle-password-btn" onclick="togglePasswordVisibility()" title="הצג/הסתר סיסמה">👁️</button>
                 </div>
 
@@ -618,6 +632,54 @@
     </div>
 
     <script>
+        // --- מנגנון אחסון מאובטח ועוקף חסימות לגלישה בסתר / Safari ---
+        const safeStorage = (function() {
+            let memoryStore = {};
+            let isLocalStorageSupported = true;
+
+            try {
+                const testKey = '__test_storage__';
+                window.localStorage.setItem(testKey, testKey);
+                window.localStorage.removeItem(testKey);
+            } catch (e) {
+                isLocalStorageSupported = false;
+                console.warn("localStorage isn't supported or is blocked (Incognito mode). Using memory fallback.");
+            }
+
+            return {
+                getItem: function(key) {
+                    if (isLocalStorageSupported) {
+                        try {
+                            return window.localStorage.getItem(key);
+                        } catch (e) {
+                            return memoryStore[key] || null;
+                        }
+                    } {
+                        return memoryStore[key] || null;
+                    }
+                },
+                setItem: function(key, value) {
+                    if (isLocalStorageSupported) {
+                        try {
+                            window.localStorage.setItem(key, value);
+                        } catch (e) {
+                            memoryStore[key] = String(value);
+                        }
+                    } else {
+                        memoryStore[key] = String(value);
+                    }
+                },
+                isPrivate: !isLocalStorageSupported
+            };
+        })();
+
+        if (safeStorage.isPrivate) {
+            document.addEventListener('DOMContentLoaded', () => {
+                const alertBox = document.getElementById('incognitoAlert');
+                if (alertBox) alertBox.style.display = 'block';
+            });
+        }
+
         let currentUser = null;
         let isSignUpMode = false;
 
@@ -642,7 +704,7 @@
         let categoryColors = {};
         let categoryBudgets = {};
 
-        // DOM elements
+        // DOM Elements
         const authSection = document.getElementById('authSection');
         const appSection = document.getElementById('appSection');
         const authForm = document.getElementById('authForm');
@@ -671,7 +733,6 @@
         const netBalanceEl = document.getElementById('netBalance');
         const usedPercentEl = document.getElementById('usedPercent');
         const netBalanceBox = document.getElementById('netBalanceBox');
-        const usedPercentBox = document.getElementById('usedPercentBox');
         const groupedList = document.getElementById('groupedList');
         const targetStatus = document.getElementById('targetStatus');
         const progressBar = document.getElementById('progressBar');
@@ -707,6 +768,14 @@
             }
         }
 
+        function getUsersDB() {
+            try {
+                return JSON.parse(safeStorage.getItem('app_users_db')) || {};
+            } catch (e) {
+                return {};
+            }
+        }
+
         authForm.addEventListener('submit', (e) => {
             e.preventDefault();
             authError.textContent = '';
@@ -719,7 +788,7 @@
                 return;
             }
 
-            let usersDB = JSON.parse(localStorage.getItem('app_users_db')) || {};
+            let usersDB = getUsersDB();
 
             if (isSignUpMode) {
                 const fullName = authFullName.value.trim();
@@ -743,7 +812,7 @@
                     transactions: []
                 };
 
-                localStorage.setItem('app_users_db', JSON.stringify(usersDB));
+                safeStorage.setItem('app_users_db', JSON.stringify(usersDB));
                 loginUser(usersDB[email]);
             } else {
                 if (!usersDB[email] || usersDB[email].password !== password) {
@@ -795,7 +864,7 @@
         function saveCurrentUserData() {
             if (!currentUser) return;
 
-            let usersDB = JSON.parse(localStorage.getItem('app_users_db')) || {};
+            let usersDB = getUsersDB();
             
             currentUser.categories = categories;
             currentUser.categoryColors = categoryColors;
@@ -804,7 +873,7 @@
             currentUser.transactions = transactions;
 
             usersDB[currentUser.email] = currentUser;
-            localStorage.setItem('app_users_db', JSON.stringify(usersDB));
+            safeStorage.setItem('app_users_db', JSON.stringify(usersDB));
         }
 
         descInput.addEventListener('input', () => {
