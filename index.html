@@ -135,6 +135,39 @@
             border-color: var(--accent);
         }
 
+        /* עטיפה לשדה הסיסמה עם כפתור העין */
+        .password-wrapper {
+            position: relative;
+            display: flex;
+            align-items: center;
+            width: 100%;
+        }
+
+        .password-wrapper input {
+            width: 100%;
+            padding-left: 40px; /* מרווח כדי שהטקסט לא יעלה על העין */
+            box-sizing: border-box;
+        }
+
+        .toggle-password-btn {
+            position: absolute;
+            left: 10px;
+            background: none;
+            border: none;
+            cursor: pointer;
+            font-size: 1.1rem;
+            padding: 0;
+            color: var(--subtext-color);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            user-select: none;
+        }
+
+        .toggle-password-btn:hover {
+            color: var(--text-color);
+        }
+
         button.btn-primary {
             background-color: var(--primary);
             color: white;
@@ -364,7 +397,13 @@
             <form id="authForm" class="form-group">
                 <input type="text" id="authFullName" placeholder="שם מלא (בעברית או אנגלית)" style="display: none;">
                 <input type="email" id="authEmail" placeholder="כתובת אימייל" required>
-                <input type="password" id="authPassword" placeholder="סיסמה (לפחות 6 תווים כלשהם)" minlength="6" required>
+                
+                <!-- שדה סיסמה מעוטף עם עין -->
+                <div class="password-wrapper">
+                    <input type="password" id="authPassword" placeholder="סיסמה (לפחות 6 תווים כלשהם)" minlength="6" required>
+                    <button type="button" class="toggle-password-btn" onclick="togglePasswordVisibility()" title="הצג/הסתר סיסמה">👁️</button>
+                </div>
+
                 <div id="authError" class="error-message"></div>
                 <button type="submit" id="authSubmitBtn" class="btn-primary">התחבר</button>
             </form>
@@ -572,6 +611,18 @@
         const searchInput = document.getElementById('searchInput');
         const filterPaymentMethod = document.getElementById('filterPaymentMethod');
 
+        // פונקציה להצגה/הסתרה של הסיסמה
+        function togglePasswordVisibility() {
+            const btn = document.querySelector('.toggle-password-btn');
+            if (authPassword.type === 'password') {
+                authPassword.type = 'text';
+                btn.textContent = '🙈';
+            } else {
+                authPassword.type = 'password';
+                btn.textContent = '👁️';
+            }
+        }
+
         // --- Auth System ---
         function toggleAuthMode() {
             isSignUpMode = !isSignUpMode;
@@ -659,6 +710,10 @@
             authSection.style.display = 'block';
             appSection.style.display = 'none';
             authForm.reset();
+            // איפוס תצוגת סיסמה למצב חסוי
+            authPassword.type = 'password';
+            const btn = document.querySelector('.toggle-password-btn');
+            if (btn) btn.textContent = '👁️';
         }
 
         function loadUserData(userData) {
