@@ -383,6 +383,7 @@
             </div>
             <div class="user-actions">
                 <button id="themeToggle" class="theme-toggle-btn" onclick="toggleTheme()">🌙 מצב לילה</button>
+                <button class="btn-small" onclick="openModal()">⚙️ ניהול קטגוריות</button>
                 <button class="btn-small" onclick="logout()">התנתק 🚪</button>
             </div>
         </div>
@@ -401,7 +402,7 @@
             <h2>🎯 יעד הוצאות חודשי כולל</h2>
             <div class="form-group">
                 <label>אחוז הוצאות מקסימלי מתוך ההכנסות (%):</label>
-                <input type="number" id="targetPercent" value="80" min="1" max="100" onchange="saveCurrentUserData()">
+                <input type="number" id="targetPercent" value="80" min="1" max="100" onchange="saveCurrentUserData(); updateUI();">
             </div>
             <div class="progress-container">
                 <div id="progressBar" class="progress-bar"></div>
@@ -661,11 +662,17 @@
         }
 
         function loadUserData(userData) {
-            categories = userData.categories || defaultCategoriesList;
+            categories = userData.categories || [...defaultCategoriesList];
             categoryColors = userData.categoryColors || {};
             categoryBudgets = userData.categoryBudgets || {};
             targetPercentInput.value = userData.targetPercent || 80;
             transactions = userData.transactions || [];
+
+            categories.forEach((cat, index) => {
+                if (!categoryColors[cat]) {
+                    categoryColors[cat] = palette[index % palette.length];
+                }
+            });
         }
 
         function saveCurrentUserData() {
@@ -717,52 +724,60 @@
             }
         });
 
+        // --- Transaction Form Handling ---
         financeForm.addEventListener('submit', (e) => {
             e.preventDefault();
-            if (!currentUser) return;
 
-            const newT = {
+            const desc = descInput.value.trim();
+            const amount = parseFloat(amountInput.value);
+            const type = typeInput.value;
+            const category = categoryInput.value;
+            const paymentMethod = paymentMethodInput.value;
+            const isFixed = isFixedInput.checked;
+
+            const selectedMonth = parseInt(selectedMonthEl.value);
+            const selectedYear = parseInt(selectedYearEl.value);
+
+            const newTransaction = {
                 id: Date.now().toString(),
-                desc: descInput.value,
-                amount: parseFloat(amountInput.value),
-                type: typeInput.value,
-                category: categoryInput.value,
-                paymentMethod: paymentMethodInput.value,
-                isFixed: isFixedInput.checked,
-                month: parseInt(selectedMonthEl.value),
-                year: parseInt(selectedYearEl.value)
+                desc,
+                amount,
+                type,
+                category,
+                paymentMethod,
+                isFixed,
+                month: selectedMonth,
+                year: selectedYear,
+                date: new Date().toISOString()
             };
 
-            transactions.push(newT);
+            transactions.push(newTransaction);
             saveCurrentUserData();
+            updateUI();
 
+            // Reset Form fields
             descInput.value = '';
             amountInput.value = '';
             isFixedInput.checked = false;
-            updateUI();
         });
 
-        function deleteTransaction(id) {
-            transactions = transactions.filter(t => t.id !== id);
-            saveCurrentUserData();
-            updateUI();
-        }
-
+        // --- Date Selectors Initialization ---
         function initDateSelectors() {
             const now = new Date();
-            selectedMonthEl.innerHTML = '';
-            selectedYearEl.innerHTML = '';
+            const currentMonth = now.getMonth();
+            const currentYear = now.getFullYear();
 
+            selectedMonthEl.innerHTML = '';
             monthsList.forEach((m, idx) => {
                 const opt = document.createElement('option');
                 opt.value = idx;
                 opt.textContent = m;
-                if (idx === now.getMonth()) opt.selected = true;
+                if (idx === currentMonth) opt.selected = true;
                 selectedMonthEl.appendChild(opt);
             });
 
-            const currentYear = now.getFullYear();
-            for (let y = currentYear - 2; y <= currentYear + 3; y++) {
+            selectedYearEl.innerHTML = '';
+            for (let y = currentYear - 2; y <= currentYear + 2; y++) {
                 const opt = document.createElement('option');
                 opt.value = y;
                 opt.textContent = y;
@@ -771,19 +786,7 @@
             }
         }
 
-        function toggleTheme() {
-            const currentTheme = document.body.getAttribute('data-theme');
-            const newTheme = currentTheme === 'dark' ? 'light' : 'dark';
-            document.body.setAttribute('data-theme', newTheme);
-            document.getElementById('themeToggle').textContent = newTheme === 'dark' ? '☀️ מצב יום' : '🌙 מצב לילה';
-            localStorage.setItem('theme', newTheme);
-        }
-
-        if (localStorage.getItem('theme') === 'dark') {
-            document.body.setAttribute('data-theme', 'dark');
-            document.getElementById('themeToggle').textContent = '☀️ מצב יום';
-        }
-
+        // --- UI Rendering ---
         function renderCategoriesSelect() {
             categoryInput.innerHTML = '';
             categories.forEach(cat => {
@@ -792,202 +795,198 @@
                 opt.textContent = cat;
                 categoryInput.appendChild(opt);
             });
-            const addOpt = document.createElement('option');
-            addOpt.value = "__MANAGE__";
-            addOpt.textContent = "⚙️ ניהול נושאים ותקציב...";
-            categoryInput.appendChild(addOpt);
-        }
-
-        categoryInput.addEventListener('change', () => {
-            if (categoryInput.value === '__MANAGE__') {
-                renderManageModalList();
-                document.getElementById('manageCatModal').style.display = 'flex';
-                categoryInput.value = categories[0] || '';
-            }
-        });
-
-        function closeModal() {
-            document.getElementById('manageCatModal').style.display = 'none';
-            saveCurrentUserData();
-            updateUI();
-        }
-
-        function renderManageModalList() {
-            const list = document.getElementById('manageCatList');
-            list.innerHTML = '';
-            categories.forEach(cat => {
-                const bVal = categoryBudgets[cat] || '';
-                const item = document.createElement('div');
-                item.className = 'manage-cat-item';
-                item.innerHTML = `
-                    <div class="manage-cat-row">
-                        <strong>${cat}</strong>
-                        <button class="delete-btn" onclick="deleteCategory('${cat}')">✕</button>
-                    </div>
-                    <div class="manage-cat-row">
-                        <span style="font-size:0.8rem;">תקציב יעד (ש״ח):</span>
-                        <input type="number" value="${bVal}" placeholder="ללא יעד" style="width: 120px; padding: 4px;" onchange="updateCatBudget('${cat}', this.value)">
-                    </div>
-                `;
-                list.appendChild(item);
-            });
-        }
-
-        function updateCatBudget(cat, val) {
-            if (val === '' || parseFloat(val) <= 0) {
-                delete categoryBudgets[cat];
-            } else {
-                categoryBudgets[cat] = parseFloat(val);
-            }
-        }
-
-        function saveNewCategory() {
-            const name = document.getElementById('newCatName').value.trim();
-            if (!name) return;
-            const fullName = `${name} 📌`;
-            if (!categories.includes(fullName)) {
-                categories.push(fullName);
-                renderCategoriesSelect();
-                renderManageModalList();
-            }
-            document.getElementById('newCatName').value = '';
-        }
-
-        function deleteCategory(cat) {
-            categories = categories.filter(c => c !== cat);
-            delete categoryBudgets[cat];
-            renderCategoriesSelect();
-            renderManageModalList();
-        }
-
-        function changeCategoryColor(catName, color) {
-            categoryColors[catName] = color;
-            saveCurrentUserData();
-            updateUI();
         }
 
         function updateUI() {
-            const curM = parseInt(selectedMonthEl.value);
-            const curY = parseInt(selectedYearEl.value);
-            const searchVal = searchInput.value.toLowerCase();
-            const filterPM = filterPaymentMethod.value;
+            if (!currentUser) return;
 
+            const selMonth = parseInt(selectedMonthEl.value);
+            const selYear = parseInt(selectedYearEl.value);
+            const searchTerm = searchInput.value.trim().toLowerCase();
+            const selPayment = filterPaymentMethod.value;
+
+            // Filter transactions for selected period + include fixed expenses from past
             const filtered = transactions.filter(t => {
-                const matchesDate = (t.month === curM && t.year === curY) || t.isFixed;
-                const matchesSearch = t.desc.toLowerCase().includes(searchVal);
-                const matchesPM = filterPM === 'ALL' || t.paymentMethod === filterPM;
-                return matchesDate && matchesSearch && matchesPM;
+                const isCorrectPeriod = (t.month === selMonth && t.year === selYear) || 
+                                        (t.isFixed && (t.year < selYear || (t.year === selYear && t.month <= selMonth)));
+                const matchesSearch = t.desc.toLowerCase().includes(searchTerm);
+                const matchesPayment = (selPayment === 'ALL' || t.paymentMethod === selPayment);
+
+                return isCorrectPeriod && matchesSearch && matchesPayment;
             });
 
+            // Calculate Totals
             let totalIncome = 0;
             let totalExpense = 0;
-            const groups = {};
 
             filtered.forEach(t => {
                 if (t.type === 'income') totalIncome += t.amount;
                 else totalExpense += t.amount;
-
-                if (!groups[t.category]) {
-                    groups[t.category] = { name: t.category, items: [], type: t.type, totalSum: 0 };
-                }
-                groups[t.category].items.push(t);
-                groups[t.category].totalSum += t.amount;
             });
-
-            const catArray = Object.values(groups);
-            catArray.sort((a, b) => {
-                if (a.type === 'income' && b.type === 'expense') return -1;
-                if (a.type === 'expense' && b.type === 'income') return 1;
-                return b.totalSum - a.totalSum;
-            });
-
-            groupedList.innerHTML = '';
-
-            if (catArray.length === 0) {
-                groupedList.innerHTML = '<p style="color: var(--subtext-color); text-align: center;">אין תנועות להצגה לתקופה זו</p>';
-            } else {
-                catArray.forEach((group, idx) => {
-                    group.items.sort((a, b) => b.amount - a.amount);
-                    const catColor = categoryColors[group.name] || palette[idx % palette.length];
-
-                    const catBox = document.createElement('div');
-                    catBox.className = 'category-group';
-                    catBox.style.setProperty('--theme-color', catColor);
-
-                    let budgetInfoHtml = '';
-                    const catBudget = categoryBudgets[group.name];
-                    if (catBudget && group.type === 'expense') {
-                        const isExceeded = group.totalSum > catBudget;
-                        const pct = ((group.totalSum / catBudget) * 100).toFixed(0);
-                        budgetInfoHtml = `
-                            <div class="category-budget-info" style="${isExceeded ? 'color: var(--danger); font-weight: bold;' : ''}">
-                                יעד קטגוריה: ${catBudget.toLocaleString()} ₪ (${pct}% ניצול) ${isExceeded ? '🚨 חריגה!' : ''}
-                            </div>
-                        `;
-                    }
-
-                    let itemsHtml = '';
-                    group.items.forEach(t => {
-                        const isInc = t.type === 'income';
-                        const fixedBadge = t.isFixed ? `<span class="fixed-badge">קבועה</span>` : '';
-                        itemsHtml += `
-                            <li>
-                                <div class="item-details">
-                                    <span>${fixedBadge}${t.desc}</span>
-                                    <div class="item-subtext">${t.paymentMethod}</div>
-                                </div>
-                                <div>
-                                    <span class="${isInc ? 'tag-income' : 'tag-expense'}">
-                                        ${isInc ? '+' : '-'}${t.amount.toLocaleString()} ₪
-                                    </span>
-                                    <button class="delete-btn" onclick="deleteTransaction('${t.id}')">✕</button>
-                                </div>
-                            </li>
-                        `;
-                    });
-
-                    catBox.innerHTML = `
-                        <div class="category-header">
-                            <span>${group.name}</span>
-                            <div class="category-actions">
-                                <span class="category-total">סה״כ: ${group.totalSum.toLocaleString()} ₪</span>
-                                <input type="color" class="color-picker-input" value="${catColor}" onchange="changeCategoryColor('${group.name}', this.value)">
-                            </div>
-                        </div>
-                        ${budgetInfoHtml}
-                        <ul class="item-list">${itemsHtml}</ul>
-                    `;
-                    groupedList.appendChild(catBox);
-                });
-            }
 
             const netBalance = totalIncome - totalExpense;
             const targetPercent = parseFloat(targetPercentInput.value) || 80;
-            const usedPercent = totalIncome > 0 ? ((totalExpense / totalIncome) * 100) : 0;
+            const targetExpenseMax = (totalIncome * targetPercent) / 100;
+            const usedPercent = totalIncome > 0 ? (totalExpense / totalIncome) * 100 : 0;
 
+            // Render Totals Card
             totalIncomeEl.textContent = `${totalIncome.toLocaleString()} ₪`;
             totalExpenseEl.textContent = `${totalExpense.toLocaleString()} ₪`;
             netBalanceEl.textContent = `${netBalance.toLocaleString()} ₪`;
             usedPercentEl.textContent = `${usedPercent.toFixed(1)}%`;
 
+            netBalanceBox.className = `summary-item ${netBalance < 0 ? 'alert-danger' : ''}`;
+            
+            // Progress Bar & Status
             progressBar.style.width = `${Math.min(usedPercent, 100)}%`;
-
-            if (usedPercent > targetPercent || netBalance < 0) {
-                targetStatus.textContent = `🚨 אזהרה: חריגה מהיעד! ניצול של ${usedPercent.toFixed(1)}% מתוך יעד של ${targetPercent}%.`;
-                targetStatus.style.color = 'var(--danger)';
+            if (usedPercent > targetPercent) {
                 progressBar.style.backgroundColor = 'var(--danger)';
-                usedPercentBox.classList.add('alert-danger');
-                if (netBalance < 0) netBalanceBox.classList.add('alert-danger');
+                targetStatus.textContent = `⚠️ חרגת מיעד ההוצאות החודשי ב-${(usedPercent - targetPercent).toFixed(1)}%!`;
+                targetStatus.style.color = 'var(--danger)';
             } else {
-                targetStatus.textContent = `✅ עומד ביעד! נשאר לפחות ${(100 - targetPercent)}% לחיסכון והשקעה.`;
-                targetStatus.style.color = 'var(--primary)';
                 progressBar.style.backgroundColor = 'var(--primary)';
-                usedPercentBox.classList.remove('alert-danger');
-                netBalanceBox.classList.remove('alert-danger');
+                targetStatus.textContent = `✅ תקין: מנוצל ${usedPercent.toFixed(1)}% מתוך יעד של ${targetPercent}%.`;
+                targetStatus.style.color = 'var(--subtext-color)';
+            }
+
+            // Group Transactions by Category
+            groupedList.innerHTML = '';
+
+            categories.forEach(cat => {
+                const catItems = filtered.filter(t => t.category === cat);
+                if (catItems.length === 0) return;
+
+                const catExpense = catItems.reduce((acc, curr) => curr.type === 'expense' ? acc + curr.amount : acc, 0);
+                const catIncome = catItems.reduce((acc, curr) => curr.type === 'income' ? acc + curr.amount : acc, 0);
+                const catBudget = categoryBudgets[cat] || 0;
+
+                const catGroup = document.createElement('div');
+                catGroup.className = 'category-group';
+                const catColor = categoryColors[cat] || '#3498db';
+                catGroup.style.setProperty('--theme-color', catColor);
+
+                let budgetInfoHtml = '';
+                if (catBudget > 0) {
+                    const isOver = catExpense > catBudget;
+                    budgetInfoHtml = `<div class="category-budget-info" style="${isOver ? 'color: var(--danger); font-weight: bold;' : ''}">
+                        תקציב יעד: ${catBudget.toLocaleString()} ₪ | ניצול: ${catExpense.toLocaleString()} ₪ (${((catExpense / catBudget) * 100).toFixed(0)}%)
+                    </div>`;
+                }
+
+                let itemsHtml = '<ul class="item-list">';
+                catItems.forEach(item => {
+                    const isIncome = item.type === 'income';
+                    itemsHtml += `
+                        <li>
+                            <div class="item-details">
+                                <div>
+                                    ${item.isFixed ? '<span class="fixed-badge">קבוע</span>' : ''}
+                                    <strong>${item.desc}</strong>
+                                </div>
+                                <span class="item-subtext">${item.paymentMethod}</span>
+                            </div>
+                            <div style="display: flex; align-items: center; gap: 10px;">
+                                <span class="${isIncome ? 'tag-income' : 'tag-expense'}">
+                                    ${isIncome ? '+' : '-'}${item.amount.toLocaleString()} ₪
+                                </span>
+                                <button class="delete-btn" onclick="deleteTransaction('${item.id}')">🗑️</button>
+                            </div>
+                        </li>
+                    `;
+                });
+                itemsHtml += '</ul>';
+
+                catGroup.innerHTML = `
+                    <div class="category-header">
+                        <span>${cat}</span>
+                        <div class="category-actions">
+                            <input type="color" class="color-picker-input" value="${catColor}" onchange="changeCategoryColor('${cat}', this.value)">
+                            <span class="category-total">${catIncome > 0 ? `+${catIncome.toLocaleString()}` : ''} ${catExpense > 0 ? `-${catExpense.toLocaleString()}` : ''} ₪</span>
+                        </div>
+                    </div>
+                    ${budgetInfoHtml}
+                    ${itemsHtml}
+                `;
+
+                groupedList.appendChild(catGroup);
+            });
+
+            if (groupedList.children.length === 0) {
+                groupedList.innerHTML = '<p style="text-align: center; color: var(--subtext-color);">אין תנועות להצגה בתקופה זו.</p>';
             }
         }
 
-        // בדיקה אוטומטית בהפעלה ראשונית
+        // --- Transaction & Category Operations ---
+        function deleteTransaction(id) {
+            transactions = transactions.filter(t => t.id !== id);
+            saveCurrentUserData();
+            updateUI();
+        }
+
+        function changeCategoryColor(cat, color) {
+            categoryColors[cat] = color;
+            saveCurrentUserData();
+            updateUI();
+        }
+
+        // --- Theme Toggle ---
+        function toggleTheme() {
+            const currentTheme = document.body.getAttribute('data-theme');
+            const newTheme = currentTheme === 'dark' ? 'light' : 'dark';
+            if (newTheme === 'dark') {
+                document.body.setAttribute('data-theme', 'dark');
+            } else {
+                document.body.removeAttribute('data-theme');
+            }
+        }
+
+        // --- Category Modal Management ---
+        function openModal() {
+            renderManageCatList();
+            document.getElementById('manageCatModal').style.display = 'flex';
+        }
+
+        function closeModal() {
+            document.getElementById('manageCatModal').style.display = 'none';
+            renderCategoriesSelect();
+            updateUI();
+        }
+
+        function saveNewCategory() {
+            const nameInput = document.getElementById('newCatName');
+            const newName = nameInput.value.trim();
+            if (newName && !categories.includes(newName)) {
+                categories.push(newName);
+                categoryColors[newName] = palette[categories.length % palette.length];
+                saveCurrentUserData();
+                renderManageCatList();
+                nameInput.value = '';
+            }
+        }
+
+        function updateCategoryBudget(cat, val) {
+            categoryBudgets[cat] = parseFloat(val) || 0;
+            saveCurrentUserData();
+        }
+
+        function renderManageCatList() {
+            const listEl = document.getElementById('manageCatList');
+            listEl.innerHTML = '';
+
+            categories.forEach(cat => {
+                const div = document.createElement('div');
+                div.className = 'manage-cat-item';
+                div.innerHTML = `
+                    <div class="manage-cat-row">
+                        <span><strong>${cat}</strong></span>
+                    </div>
+                    <input type="number" placeholder="הזן תקציב מקסימלי" value="${categoryBudgets[cat] || ''}" onchange="updateCategoryBudget('${cat}', this.value)">
+                `;
+                listEl.appendChild(div);
+            });
+        }
+
+        // On Page Load
         checkExistingSession();
     </script>
 </body>
