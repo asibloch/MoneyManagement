@@ -2,13 +2,10 @@
 <html lang="he" dir="rtl">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>ניהול תקציב אישי</title>
-    
-    <!-- Firebase SDKs -->
-    <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-app-compat.js"></script>
-    <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore-compat.js"></script>
-
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>מנהל תקציב ויעדים חכם</title>
+    <!-- אייקון בלשונית (Favicon) -->
+    <link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>💸</text></svg>">
     <style>
         :root {
             --bg-color: #f4f7f6;
@@ -31,31 +28,15 @@
             --input-bg: #1a202c;
         }
 
-        /* 1. מניעת גלישה הרמטית ברמת כל האלמנטים */
-        *, *::before, *::after {
-            box-sizing: border-box;
-            max-width: 100%;
-        }
-
-        /* 2. חסימת גלילה אופקית ב-HTML וב-BODY */
-        html, body {
-            width: 100%;
-            max-width: 100%;
-            overflow-x: hidden !important;
-            margin: 0;
-            padding: 0;
-        }
-
         body {
             font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
             background-color: var(--bg-color);
             color: var(--text-color);
-            padding: 12px;
+            margin: 0;
+            padding: 20px;
             display: flex;
             justify-content: center;
             transition: background-color 0.3s, color 0.3s;
-            word-wrap: break-word;
-            overflow-wrap: break-word;
         }
 
         .container {
@@ -65,21 +46,18 @@
 
         .auth-container {
             max-width: 400px;
-            margin: 10px auto;
-            width: 100%;
+            margin: 40px auto;
         }
 
         .header-top {
             display: flex;
             justify-content: space-between;
             align-items: center;
-            margin-bottom: 15px;
-            gap: 8px;
-            flex-wrap: wrap; /* מאפשר לרדת שורה במסכים ממש קטנים */
+            margin-bottom: 20px;
         }
 
         .user-greeting {
-            font-size: 1rem;
+            font-size: 1.2rem;
             font-weight: bold;
             color: var(--accent);
             margin-top: 4px;
@@ -88,48 +66,42 @@
         .user-actions {
             display: flex;
             align-items: center;
-            gap: 6px;
+            gap: 10px;
         }
 
-        h1 { 
-            margin: 0; 
-            font-size: 1.3rem; 
-        }
+        h1 { margin: 0; font-size: 1.8rem; }
 
         .btn-small {
-            padding: 6px 10px;
-            font-size: 0.8rem;
+            padding: 6px 12px;
+            font-size: 0.85rem;
             border-radius: 6px;
             cursor: pointer;
             border: 1px solid var(--border-color);
             background: var(--card-bg);
             color: var(--text-color);
-            white-space: nowrap;
         }
 
         .theme-toggle-btn {
             background: none;
             border: 1px solid var(--border-color);
             color: var(--text-color);
-            padding: 6px 10px;
+            padding: 8px 12px;
             border-radius: 20px;
             cursor: pointer;
-            font-size: 0.85rem;
-            white-space: nowrap;
+            font-size: 0.9rem;
         }
 
         .card {
             background-color: var(--card-bg);
-            padding: 14px;
+            padding: 20px;
             border-radius: 12px;
             box-shadow: 0 4px 6px rgba(0, 0, 0, 0.05);
-            margin-bottom: 14px;
-            width: 100%;
+            margin-bottom: 20px;
         }
 
         h2 {
             margin-top: 0;
-            font-size: 1.05rem;
+            font-size: 1.15rem;
             color: var(--text-color);
             border-bottom: 2px solid var(--border-color);
             padding-bottom: 8px;
@@ -139,23 +111,13 @@
             display: flex;
             flex-direction: column;
             gap: 10px;
-            margin-top: 12px;
-            width: 100%;
+            margin-top: 15px;
         }
 
-        /* שדות הטופס יופיעו תמיד בטור יחיד בנייד */
         .form-row {
-            display: flex;
-            flex-direction: column;
+            display: grid;
+            grid-template-columns: 1fr 1fr;
             gap: 10px;
-            width: 100%;
-        }
-
-        @media (min-width: 500px) {
-            .form-row {
-                display: grid;
-                grid-template-columns: 1fr 1fr;
-            }
         }
 
         input, select, button {
@@ -165,36 +127,9 @@
             font-size: 0.95rem;
             background-color: var(--input-bg);
             color: var(--text-color);
-            width: 100%;
-            min-width: 0; /* מונע מאלמנטים של flex/grid לפרוץ חצי מסך */
         }
 
         input:focus, select:focus { outline: none; border-color: var(--accent); }
-
-        /* שדה סיסמה עם עינית */
-        .password-wrapper {
-            position: relative;
-            width: 100%;
-        }
-
-        .password-wrapper input {
-            padding-left: 40px;
-        }
-
-        .toggle-password {
-            position: absolute;
-            left: 10px;
-            top: 50%;
-            transform: translateY(-50%);
-            cursor: pointer;
-            user-select: none;
-            font-size: 1.1rem;
-            opacity: 0.7;
-            background: none;
-            border: none;
-            padding: 0;
-            width: auto;
-        }
 
         button.btn-primary {
             background-color: var(--primary);
@@ -204,137 +139,69 @@
             cursor: pointer;
         }
 
-        .checkbox-label {
-            display: flex; 
-            align-items: center; 
-            gap: 8px; 
-            font-size: 0.9rem; 
-            cursor: pointer; 
-            margin-top: 4px;
-        }
+        button.btn-primary:hover { opacity: 0.9; }
 
-        .checkbox-label input {
-            width: auto;
+        .checkbox-label {
+            display: flex; align-items: center; gap: 8px; font-size: 0.9rem; cursor: pointer; margin-top: 5px;
         }
 
         .summary-grid {
-            display: grid; 
-            grid-template-columns: 1fr 1fr; 
-            gap: 8px; 
-            margin-top: 12px;
+            display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-top: 15px;
         }
 
         .summary-item {
-            background-color: var(--bg-color); 
-            padding: 10px 6px; 
-            border-radius: 8px; 
-            text-align: center;
-            font-size: 0.85rem;
+            background-color: var(--bg-color); padding: 12px; border-radius: 8px; text-align: center;
         }
 
-        .summary-item span { 
-            display: block; 
-            font-size: 1.05rem; 
-            font-weight: bold; 
-            margin-top: 4px; 
-        }
-        
+        .summary-item span { display: block; font-size: 1.3rem; font-weight: bold; margin-top: 4px; }
         .income-text { color: var(--primary); }
         .expense-text { color: var(--danger); }
 
         .progress-container {
-            width: 100%; 
-            background-color: var(--border-color); 
-            border-radius: 8px; 
-            height: 10px; 
-            margin-top: 8px; 
-            overflow: hidden;
+            width: 100%; background-color: var(--border-color); border-radius: 8px; height: 12px; margin-top: 8px; overflow: hidden;
         }
 
         .progress-bar { height: 100%; width: 0%; background-color: var(--primary); transition: width 0.3s; }
 
         .category-group {
             background-color: var(--bg-color);
-            border-right: 5px solid var(--theme-color, #3498db);
-            border-radius: 8px; 
-            padding: 10px; 
-            margin-bottom: 10px;
-            width: 100%;
+            border-right: 6px solid var(--theme-color, #3498db);
+            border-radius: 8px; padding: 12px 15px; margin-bottom: 15px;
         }
 
-        .category-header { 
-            display: flex; 
-            justify-content: space-between; 
-            align-items: center; 
-            font-weight: bold; 
-            font-size: 0.9rem; 
-            margin-bottom: 6px; 
-        }
-        
-        .category-actions { display: flex; align-items: center; gap: 6px; }
-        .category-total { font-size: 0.75rem; color: white; background-color: var(--theme-color, #3498db); padding: 2px 6px; border-radius: 10px; white-space: nowrap; }
+        .category-header { display: flex; justify-content: space-between; align-items: center; font-weight: bold; font-size: 1rem; margin-bottom: 6px; }
+        .category-actions { display: flex; align-items: center; gap: 8px; }
+        .category-total { font-size: 0.85rem; color: white; background-color: var(--theme-color, #3498db); padding: 2px 8px; border-radius: 12px; }
 
-        ul.item-list { list-style: none; padding: 0; margin: 0; width: 100%; }
-        ul.item-list li { 
-            display: flex; 
-            justify-content: space-between; 
-            align-items: center; 
-            padding: 8px 0; 
-            border-bottom: 1px solid var(--border-color); 
-            gap: 6px; 
-            font-size: 0.85rem;
-            min-width: 0;
-        }
-        
-        ul.item-list li span:first-child {
-            overflow: hidden;
-            text-overflow: ellipsis;
-            white-space: nowrap;
-        }
-
+        ul.item-list { list-style: none; padding: 0; margin: 0; }
+        ul.item-list li { display: flex; justify-content: space-between; align-items: center; padding: 8px 0; border-bottom: 1px solid var(--border-color); }
         ul.item-list li:last-child { border-bottom: none; }
 
-        .delete-btn { background: none; border: none; color: var(--subtext-color); cursor: pointer; font-size: 1rem; width: auto; padding: 2px 6px; }
-        
-        .auth-toggle-link { color: var(--accent); cursor: pointer; text-align: center; font-size: 0.85rem; margin-top: 8px; }
-        .error-message { color: var(--danger); font-size: 0.85rem; margin-top: 5px; text-align: center; }
+        .delete-btn { background: none; border: none; color: var(--subtext-color); cursor: pointer; font-size: 1.1rem; }
+        .delete-btn:hover { color: var(--danger); }
+
+        .auth-toggle-link { color: var(--accent); cursor: pointer; text-align: center; font-size: 0.9rem; margin-top: 10px; }
+        .error-message { color: var(--danger); font-size: 0.85rem; margin-top: 5px; }
         .loading-text { text-align: center; color: var(--subtext-color); font-size: 0.9rem; margin-top: 10px; }
     </style>
 </head>
 <body>
 
     <!-- מסך התחברות / הרשמה -->
-    <div id="authSection" class="auth-container">
+    <div id="authSection" class="container auth-container">
         <div class="card">
-            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px;">
-                <h2 id="authTitle" style="border: none; margin: 0;">התחברות</h2>
-                <button class="theme-toggle-btn" onclick="toggleTheme()">🌙</button>
+            <h2 id="authTitle">🔑 התחברות למערכת (בענן ☁️)</h2>
+            <form id="authForm" class="form-group">
+                <input type="text" id="authFullName" placeholder="שם מלא" style="display: none;">
+                <input type="email" id="authEmail" placeholder="כתובת אימייל" required>
+                <input type="password" id="authPassword" placeholder="סיסמה (לפחות 6 תווים)" minlength="6" required>
+                <div id="authError" class="error-message"></div>
+                <div id="authLoading" class="loading-text" style="display:none;">מתחבר לענן... ⏳</div>
+                <button type="submit" id="authSubmitBtn" class="btn-primary">התחבר</button>
+            </form>
+            <div id="authToggleLink" class="auth-toggle-link" onclick="toggleAuthMode()">
+                אין לך חשבון? לחץ כאן להרשמה
             </div>
-
-            <!-- טופס התחברות -->
-            <form id="loginForm" class="form-group" onsubmit="handleLogin(event)">
-                <input type="email" id="loginEmail" placeholder="אימייל" required>
-                <div class="password-wrapper">
-                    <input type="password" id="loginPassword" placeholder="סיסמה" required>
-                    <span class="toggle-password" onclick="togglePasswordVisibility('loginPassword', this)">👁️</span>
-                </div>
-                <button type="submit" class="btn-primary">התחבר</button>
-                <div class="auth-toggle-link" onclick="showRegister()">אין לך חשבון? לחץ כאן להרשמה</div>
-            </form>
-
-            <!-- טופס הרשמה -->
-            <form id="registerForm" class="form-group" style="display: none;" onsubmit="handleRegister(event)">
-                <input type="text" id="regName" placeholder="שם מלא" required>
-                <input type="email" id="regEmail" placeholder="אימייל" required>
-                <div class="password-wrapper">
-                    <input type="password" id="regPassword" placeholder="סיסמה" required>
-                    <span class="toggle-password" onclick="togglePasswordVisibility('regPassword', this)">👁️</span>
-                </div>
-                <button type="submit" class="btn-primary">הירשם</button>
-                <div class="auth-toggle-link" onclick="showLogin()">כבר נרשמת? לחץ כאן להתחברות</div>
-            </form>
-
-            <div id="authError" class="error-message"></div>
         </div>
     </div>
 
@@ -342,320 +209,305 @@
     <div id="appSection" class="container" style="display: none;">
         <div class="header-top">
             <div>
-                <h1>ניהול תקציב אישי</h1>
-                <div id="userGreeting" class="user-greeting"></div>
+                <h1>💰 מנהל תקציב ויעדים</h1>
+                <div id="userGreeting" class="user-greeting">היי, </div>
             </div>
             <div class="user-actions">
-                <button class="theme-toggle-btn" onclick="toggleTheme()">🌙</button>
-                <button class="btn-small" onclick="logout()">התנתק</button>
+                <button id="themeToggle" class="theme-toggle-btn" onclick="toggleTheme()">🌙 מצב לילה</button>
+                <button class="btn-small" onclick="logout()">התנתק 🚪</button>
             </div>
         </div>
 
-        <!-- כרטיס סיכום -->
         <div class="card">
-            <h2>סיכום תקציבי</h2>
-            <div class="summary-grid">
-                <div class="summary-item">
-                    סך הכנסות
-                    <span id="totalIncome" class="income-text">₪0</span>
-                </div>
-                <div class="summary-item">
-                    סך הוצאות
-                    <span id="totalExpense" class="expense-text">₪0</span>
-                </div>
-            </div>
-            <div style="margin-top: 12px;">
-                <div style="display: flex; justify-content: space-between; font-size: 0.85rem;">
-                    <span>ניצול התקציב:</span>
-                    <span id="budgetPercent">0%</span>
-                </div>
-                <div class="progress-container">
-                    <div id="progressBar" class="progress-bar"></div>
-                </div>
+            <h2>📅 בחירת תקופה לתצוגה</h2>
+            <div class="form-row" style="margin-top: 10px;">
+                <select id="selectedMonth" onchange="updateUI()"></select>
+                <select id="selectedYear" onchange="updateUI()"></select>
             </div>
         </div>
 
-        <!-- כרטיס הוספת תנועה -->
         <div class="card">
-            <h2>הוספת תנועה חדשה</h2>
-            <form id="transactionForm" class="form-group" onsubmit="handleAddTransaction(event)">
+            <h2>🎯 יעד הוצאות חודשי כולל</h2>
+            <div class="form-group">
+                <label>אחוז הוצאות מקסימלי מתוך ההכנסות (%):</label>
+                <input type="number" id="targetPercent" value="80" min="1" max="100" onchange="saveUserDataToCloud()">
+            </div>
+            <div class="progress-container">
+                <div id="progressBar" class="progress-bar"></div>
+            </div>
+            <p id="targetStatus" style="font-size: 0.85rem; color: var(--subtext-color); margin-top: 8px;"></p>
+        </div>
+
+        <div class="card">
+            <h2>➕ הוספת תנועה חדשה</h2>
+            <form id="financeForm" class="form-group">
+                <input type="text" id="desc" placeholder="תיאור (לדוגמה: משכורת, דלק, רמי לוי)" required>
+
                 <div class="form-row">
-                    <select id="transType" onchange="updateCategories()">
-                        <option value="expense">הוצאה</option>
-                        <option value="income">הכנסה</option>
+                    <input type="number" id="amount" step="0.01" placeholder="סכום (בש״ח)" required>
+                    <select id="type">
+                        <option value="expense">הוצאה 📉</option>
+                        <option value="income">הכנסה 📈</option>
                     </select>
-                    <select id="transCategory" required></select>
                 </div>
+
                 <div class="form-row">
-                    <input type="text" id="transTitle" placeholder="תיאור (לדוגמה: בסופר)" required>
-                    <input type="number" id="transAmount" placeholder="סכום (₪)" step="0.01" min="0.01" required>
+                    <select id="category"></select>
+                    <select id="paymentMethod">
+                        <option value="כרטיס אשראי">💳 כרטיס אשראי</option>
+                        <option value="מזומן">💵 מזומן</option>
+                        <option value="העברה בנקאית">🏦 העברה בנקאית</option>
+                        <option value="ביט / פייבוקס">📱 ביט / פייבוקס</option>
+                        <option value="צ׳ק">📝 צ׳ק</option>
+                    </select>
                 </div>
+
                 <label class="checkbox-label">
-                    <input type="checkbox" id="transFixed">
-                    תנועה קבועה (חודשית)
+                    <input type="checkbox" id="isFixed"> 📌 לסמן כהוצאה/הכנסה קבועה חודשית
                 </label>
+
                 <button type="submit" class="btn-primary">הוסף תנועה</button>
             </form>
         </div>
 
-        <!-- כרטיס פירוט לפי קטגוריות -->
         <div class="card">
-            <h2>פירוט לפי קטגוריות</h2>
-            <div id="loadingText" class="loading-text">טוען נתונים...</div>
-            <div id="categoriesList"></div>
+            <h2>📊 סיכום חודשי</h2>
+            <div class="summary-grid">
+                <div class="summary-item">הכנסות <span id="totalIncome" class="income-text">0 ₪</span></div>
+                <div class="summary-item">הוצאות <span id="totalExpense" class="expense-text">0 ₪</span></div>
+                <div class="summary-item" id="netBalanceBox">מאזן נטו <span id="netBalance">0 ₪</span></div>
+                <div class="summary-item" id="usedPercentBox">ניצול תקציב <span id="usedPercent">0%</span></div>
+            </div>
+        </div>
+
+        <div class="card">
+            <h2>📂 תנועות לפי קטגוריה</h2>
+            <div id="groupedList"></div>
         </div>
     </div>
 
+    <!-- Firebase SDKs -->
+    <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore-compat.js"></script>
+
     <script>
-        // הגדרת Firebase
         const firebaseConfig = {
-            apiKey: "AIzaSyCsW-REPLACE-WITH-YOUR-KEY",
-            authDomain: "budget-app-asi.firebaseapp.com",
-            projectId: "budget-app-asi",
-            storageBucket: "budget-app-asi.appspot.com",
-            messagingSenderId: "1028723237190",
-            appId: "1:1028723237190:web:1234567890"
+            apiKey: "AIzaSyDxrq20TrCGAsSwHdkcAQS7WBl5xmKAu44",
+            authDomain: "moneymanagement-84522.firebaseapp.com",
+            projectId: "moneymanagement-84522",
+            storageBucket: "moneymanagement-84522.firebasestorage.app",
+            messagingSenderId: "846355309588",
+            appId: "1:846355309588:web:91ea4a97640b6eaaf73301"
         };
 
         firebase.initializeApp(firebaseConfig);
         const db = firebase.firestore();
 
-        // קטגוריות מובנות
-        const categoriesData = {
-            expense: [
-                { name: "מזון וקניות", color: "#e74c3c" },
-                { name: "מגורים וממשל", color: "#e67e22" },
-                { name: "תחבורה", color: "#f1c40f" },
-                { name: "בילויים ופנאי", color: "#9b59b6" },
-                { name: "שונות", color: "#95a5a6" }
-            ],
-            income: [
-                { name: "משכורת", color: "#2ecc71" },
-                { name: "השקעות", color: "#1abc9c" },
-                { name: "מתנות/אחר", color: "#3498db" }
-            ]
-        };
+        let currentUserDocId = null;
+        let currentUserData = null;
+        let isSignUpMode = false;
 
-        let currentUser = null;
-        let transactions = [];
+        const monthsList = ["ינואר", "פברואר", "מרץ", "אפריל", "מאי", "יוני", "יולי", "אוגוסט", "ספטמבר", "אוקטובר", "נובמבר", "דצמבר"];
+        const defaultCategoriesList = [
+            "כללי 📦", "משכורת והכנסות 💵", "רכב 🚗", "אוכל וסופר 🛒",
+            "פנאי, חוגים וספורט 🥋", "חשבונות ודיור 🏠", "השקעות וחיסכון 📈"
+        ];
 
-        window.onload = function() {
-            updateCategories();
-            const savedUser = localStorage.getItem('budgetUser');
-            if (savedUser) {
-                currentUser = JSON.parse(savedUser);
-                showApp();
-            }
-        };
+        const authSection = document.getElementById('authSection');
+        const appSection = document.getElementById('appSection');
+        const authForm = document.getElementById('authForm');
+        const authTitle = document.getElementById('authTitle');
+        const authFullName = document.getElementById('authFullName');
+        const authEmail = document.getElementById('authEmail');
+        const authPassword = document.getElementById('authPassword');
+        const authSubmitBtn = document.getElementById('authSubmitBtn');
+        const authToggleLink = document.getElementById('authToggleLink');
+        const authError = document.getElementById('authError');
+        const authLoading = document.getElementById('authLoading');
+        const userGreeting = document.getElementById('userGreeting');
 
-        function togglePasswordVisibility(inputId, iconElement) {
-            const passwordInput = document.getElementById(inputId);
-            if (passwordInput.type === "password") {
-                passwordInput.type = "text";
-                iconElement.textContent = "🙈";
+        const selectedMonthEl = document.getElementById('selectedMonth');
+        const selectedYearEl = document.getElementById('selectedYear');
+        const financeForm = document.getElementById('financeForm');
+        const descInput = document.getElementById('desc');
+        const amountInput = document.getElementById('amount');
+        const typeInput = document.getElementById('type');
+        const categoryInput = document.getElementById('category');
+        const paymentMethodInput = document.getElementById('paymentMethod');
+        const isFixedInput = document.getElementById('isFixed');
+        const targetPercentInput = document.getElementById('targetPercent');
+
+        const totalIncomeEl = document.getElementById('totalIncome');
+        const totalExpenseEl = document.getElementById('totalExpense');
+        const netBalanceEl = document.getElementById('netBalance');
+        const usedPercentEl = document.getElementById('usedPercent');
+        const groupedList = document.getElementById('groupedList');
+        const targetStatus = document.getElementById('targetStatus');
+        const progressBar = document.getElementById('progressBar');
+
+        function toggleAuthMode() {
+            isSignUpMode = !isSignUpMode;
+            authError.textContent = '';
+            if (isSignUpMode) {
+                authTitle.textContent = '📝 הרשמה לחשבון ענן';
+                authFullName.style.display = 'block';
+                authFullName.required = true;
+                authSubmitBtn.textContent = 'הירשם והתחבר';
+                authToggleLink.textContent = 'כבר יש לך חשבון? לחץ כאן להתחברות';
             } else {
-                passwordInput.type = "password";
-                iconElement.textContent = "👁️";
+                authTitle.textContent = '🔑 התחברות למערכת (בענן ☁️)';
+                authFullName.style.display = 'none';
+                authFullName.required = false;
+                authSubmitBtn.textContent = 'התחבר';
+                authToggleLink.textContent = 'אין לך חשבון? לחץ כאן להרשמה';
             }
         }
 
-        function showRegister() {
-            document.getElementById('loginForm').style.display = 'none';
-            document.getElementById('registerForm').style.display = 'flex';
-            document.getElementById('authTitle').textContent = 'הרשמה';
-            document.getElementById('authError').textContent = '';
-        }
-
-        function showLogin() {
-            document.getElementById('registerForm').style.display = 'none';
-            document.getElementById('loginForm').style.display = 'flex';
-            document.getElementById('authTitle').textContent = 'התחברות';
-            document.getElementById('authError').textContent = '';
-        }
-
-        async function handleRegister(e) {
+        authForm.addEventListener('submit', async (e) => {
             e.preventDefault();
-            const name = document.getElementById('regName').value.trim();
-            const email = document.getElementById('regEmail').value.trim().toLowerCase();
-            const password = document.getElementById('regPassword').value.trim();
-            const errorDiv = document.getElementById('authError');
+            authError.textContent = '';
+            authLoading.style.display = 'block';
+            authSubmitBtn.disabled = true;
+
+            const email = authEmail.value.trim().toLowerCase();
+            const password = authPassword.value;
 
             try {
-                const userDoc = await db.collection('users').doc(email).get();
-                if (userDoc.exists) {
-                    errorDiv.textContent = "משתמש עם אימייל זה כבר קיים במערכת";
-                    return;
+                if (isSignUpMode) {
+                    const fullName = authFullName.value.trim();
+                    const userCheck = await db.collection('users').where('email', '==', email).get();
+                    if (!userCheck.empty) {
+                        authError.textContent = 'משתמש עם אימייל זה כבר קיים!';
+                        authLoading.style.display = 'none';
+                        authSubmitBtn.disabled = false;
+                        return;
+                    }
+
+                    const newUser = {
+                        email: email,
+                        password: password,
+                        fullName: fullName,
+                        categories: defaultCategoriesList,
+                        categoryBudgets: {},
+                        targetPercent: 80,
+                        transactions: []
+                    };
+
+                    const docRef = await db.collection('users').add(newUser);
+                    currentUserDocId = docRef.id;
+                    currentUserData = newUser;
+                    loginSuccess();
+                } else {
+                    const snapshot = await db.collection('users')
+                        .where('email', '==', email)
+                        .where('password', '==', password)
+                        .get();
+
+                    if (snapshot.empty) {
+                        authError.textContent = 'אימייל או סיסמה לא נכונים';
+                        authLoading.style.display = 'none';
+                        authSubmitBtn.disabled = false;
+                        return;
+                    }
+
+                    snapshot.forEach(doc => {
+                        currentUserDocId = doc.id;
+                        currentUserData = doc.data();
+                    });
+                    loginSuccess();
                 }
-
-                const newUser = { name, email, password };
-                await db.collection('users').doc(email).set(newUser);
-                
-                currentUser = newUser;
-                localStorage.setItem('budgetUser', JSON.stringify(currentUser));
-                showApp();
             } catch (err) {
-                errorDiv.textContent = "שגיאה בהרשמה: " + err.message;
+                authError.textContent = 'שגיאה בתקשורת עם הענן: ' + err.message;
+            } finally {
+                authLoading.style.display = 'none';
+                authSubmitBtn.disabled = false;
             }
-        }
+        });
 
-        async function handleLogin(e) {
-            e.preventDefault();
-            const email = document.getElementById('loginEmail').value.trim().toLowerCase();
-            const password = document.getElementById('loginPassword').value.trim();
-            const errorDiv = document.getElementById('authError');
-
-            try {
-                const userDoc = await db.collection('users').doc(email).get();
-                if (!userDoc.exists || userDoc.data().password !== password) {
-                    errorDiv.textContent = "אימייל או סיסמה לא נכונים";
-                    return;
-                }
-
-                currentUser = userDoc.data();
-                localStorage.setItem('budgetUser', JSON.stringify(currentUser));
-                showApp();
-            } catch (err) {
-                errorDiv.textContent = "שגיאה בהתחברות: " + err.message;
-            }
+        function loginSuccess() {
+            authSection.style.display = 'none';
+            appSection.style.display = 'block';
+            userGreeting.textContent = `היי, ${currentUserData.fullName}`;
+            initDateSelectors();
+            renderCategories();
+            updateUI();
         }
 
         function logout() {
-            localStorage.removeItem('budgetUser');
-            currentUser = null;
-            document.getElementById('appSection').style.display = 'none';
-            document.getElementById('authSection').style.display = 'block';
+            currentUserDocId = null;
+            currentUserData = null;
+            authSection.style.display = 'block';
+            appSection.style.display = 'none';
+            authForm.reset();
         }
 
-        function showApp() {
-            document.getElementById('authSection').style.display = 'none';
-            document.getElementById('appSection').style.display = 'block';
-            document.getElementById('userGreeting').textContent = `שלום, ${currentUser.name}`;
-            loadTransactions();
+        async function saveUserDataToCloud() {
+            if (!currentUserDocId || !currentUserData) return;
+            currentUserData.targetPercent = parseFloat(targetPercentInput.value) || 80;
+            await db.collection('users').doc(currentUserDocId).update(currentUserData);
         }
 
-        function loadTransactions() {
-            document.getElementById('loadingText').style.display = 'block';
-            db.collection('users').doc(currentUser.email).collection('transactions')
-                .onSnapshot(snapshot => {
-                    transactions = [];
-                    snapshot.forEach(doc => {
-                        transactions.push({ id: doc.id, ...doc.data() });
-                    });
-                    document.getElementById('loadingText').style.display = 'none';
-                    renderApp();
-                }, err => {
-                    document.getElementById('loadingText').textContent = "שגיאה בטעינת נתונים";
-                });
-        }
-
-        function updateCategories() {
-            const type = document.getElementById('transType').value;
-            const select = document.getElementById('transCategory');
-            select.innerHTML = '';
-            categoriesData[type].forEach(cat => {
-                const opt = document.createElement('option');
-                opt.value = cat.name;
-                opt.textContent = cat.name;
-                select.appendChild(opt);
-            });
-        }
-
-        async function handleAddTransaction(e) {
+        financeForm.addEventListener('submit', async (e) => {
             e.preventDefault();
-            const type = document.getElementById('transType').value;
-            const category = document.getElementById('transCategory').value;
-            const title = document.getElementById('transTitle').value.trim();
-            const amount = parseFloat(document.getElementById('transAmount').value);
-            const isFixed = document.getElementById('transFixed').checked;
+            if (!currentUserData) return;
 
-            if (!title || isNaN(amount)) return;
-
-            const newTrans = {
-                type,
-                category,
-                title,
-                amount,
-                isFixed,
-                createdAt: firebase.firestore.FieldValue.serverTimestamp()
+            const newT = {
+                id: Date.now().toString(),
+                desc: descInput.value,
+                amount: parseFloat(amountInput.value),
+                type: typeInput.value,
+                category: categoryInput.value,
+                paymentMethod: paymentMethodInput.value,
+                isFixed: isFixedInput.checked,
+                month: parseInt(selectedMonthEl.value),
+                year: parseInt(selectedYearEl.value)
             };
 
-            await db.collection('users').doc(currentUser.email).collection('transactions').add(newTrans);
-            
-            document.getElementById('transTitle').value = '';
-            document.getElementById('transAmount').value = '';
-            document.getElementById('transFixed').checked = false;
-        }
+            currentUserData.transactions.push(newT);
+            await saveUserDataToCloud();
+
+            descInput.value = '';
+            amountInput.value = '';
+            isFixedInput.checked = false;
+            updateUI();
+        });
 
         async function deleteTransaction(id) {
-            if (confirm("האם למחוק תנועה זו?")) {
-                await db.collection('users').doc(currentUser.email).collection('transactions').doc(id).delete();
+            currentUserData.transactions = currentUserData.transactions.filter(t => t.id !== id);
+            await saveUserDataToCloud();
+            updateUI();
+        }
+
+        function initDateSelectors() {
+            const now = new Date();
+            selectedMonthEl.innerHTML = '';
+            selectedYearEl.innerHTML = '';
+
+            monthsList.forEach((m, idx) => {
+                const opt = document.createElement('option');
+                opt.value = idx;
+                opt.textContent = m;
+                if (idx === now.getMonth()) opt.selected = true;
+                selectedMonthEl.appendChild(opt);
+            });
+
+            const currentYear = now.getFullYear();
+            for (let y = currentYear - 2; y <= currentYear + 3; y++) {
+                const opt = document.createElement('option');
+                opt.value = y;
+                opt.textContent = y;
+                if (y === currentYear) opt.selected = true;
+                selectedYearEl.appendChild(opt);
             }
         }
 
-        function renderApp() {
-            let totalIncome = 0;
-            let totalExpense = 0;
-            const categoriesMap = {};
-
-            transactions.forEach(t => {
-                if (t.type === 'income') {
-                    totalIncome += t.amount;
-                } else {
-                    totalExpense += t.amount;
-                }
-
-                if (!categoriesMap[t.category]) {
-                    categoriesMap[t.category] = { total: 0, items: [], type: t.type };
-                }
-                categoriesMap[t.category].total += t.amount;
-                categoriesMap[t.category].items.push(t);
-            });
-
-            document.getElementById('totalIncome').textContent = `₪${totalIncome.toLocaleString()}`;
-            document.getElementById('totalExpense').textContent = `₪${totalExpense.toLocaleString()}`;
-
-            const percent = totalIncome > 0 ? Math.min(Math.round((totalExpense / totalIncome) * 100), 100) : 0;
-            document.getElementById('budgetPercent').textContent = `${percent}%`;
-            document.getElementById('progressBar').style.width = `${percent}%`;
-            document.getElementById('progressBar').style.backgroundColor = percent > 90 ? 'var(--danger)' : 'var(--primary)';
-
-            const catContainer = document.getElementById('categoriesList');
-            catContainer.innerHTML = '';
-
-            const allCategories = [...categoriesData.expense, ...categoriesData.income];
-
-            Object.keys(categoriesMap).forEach(catName => {
-                const catData = categoriesMap[catName];
-                const catInfo = allCategories.find(c => c.name === catName) || { color: '#3498db' };
-
-                const group = document.createElement('div');
-                group.className = 'category-group';
-                group.style.setProperty('--theme-color', catInfo.color);
-
-                let itemsHtml = '';
-                catData.items.forEach(item => {
-                    itemsHtml += `
-                        <li>
-                            <span>${item.title} ${item.isFixed ? '📌' : ''}</span>
-                            <div style="display: flex; align-items: center; gap: 4px; flex-shrink: 0;">
-                                <span>₪${item.amount.toLocaleString()}</span>
-                                <button class="delete-btn" onclick="deleteTransaction('${item.id}')">🗑️</button>
-                            </div>
-                        </li>
-                    `;
-                });
-
-                group.innerHTML = `
-                    <div class="category-header">
-                        <span>${catName}</span>
-                        <div class="category-actions">
-                            <span class="category-total">₪${catData.total.toLocaleString()}</span>
-                        </div>
-                    </div>
-                    <ul class="item-list">${itemsHtml}</ul>
-                `;
-
-                catContainer.appendChild(group);
+        function renderCategories() {
+            categoryInput.innerHTML = '';
+            (currentUserData.categories || defaultCategoriesList).forEach(cat => {
+                const opt = document.createElement('option');
+                opt.value = cat;
+                opt.textContent = cat;
+                categoryInput.appendChild(opt);
             });
         }
 
@@ -663,6 +515,92 @@
             const currentTheme = document.body.getAttribute('data-theme');
             const newTheme = currentTheme === 'dark' ? 'light' : 'dark';
             document.body.setAttribute('data-theme', newTheme);
+            document.getElementById('themeToggle').textContent = newTheme === 'dark' ? '☀️ מצב יום' : '🌙 מצב לילה';
+        }
+
+        function updateUI() {
+            if (!currentUserData) return;
+            const curM = parseInt(selectedMonthEl.value);
+            const curY = parseInt(selectedYearEl.value);
+
+            const filtered = (currentUserData.transactions || []).filter(t => {
+                return (t.month === curM && t.year === curY) || t.isFixed;
+            });
+
+            let totalIncome = 0;
+            let totalExpense = 0;
+            const groups = {};
+
+            filtered.forEach(t => {
+                if (t.type === 'income') totalIncome += t.amount;
+                else totalExpense += t.amount;
+
+                if (!groups[t.category]) {
+                    groups[t.category] = { name: t.category, items: [], type: t.type, totalSum: 0 };
+                }
+                groups[t.category].items.push(t);
+                groups[t.category].totalSum += t.amount;
+            });
+
+            groupedList.innerHTML = '';
+
+            if (Object.keys(groups).length === 0) {
+                groupedList.innerHTML = '<p style="color: var(--subtext-color); text-align: center;">אין תנועות להצגה לתקופה זו</p>';
+            } else {
+                Object.values(groups).forEach(group => {
+                    const catBox = document.createElement('div');
+                    catBox.className = 'category-group';
+
+                    let itemsHtml = '';
+                    group.items.forEach(t => {
+                        const isInc = t.type === 'income';
+                        itemsHtml += `
+                            <li>
+                                <div>
+                                    <span>${t.desc}</span>
+                                    <div style="font-size: 0.8rem; color: var(--subtext-color);">${t.paymentMethod}</div>
+                                </div>
+                                <div>
+                                    <span class="${isInc ? 'income-text' : 'expense-text'}">
+                                        ${isInc ? '+' : '-'}${t.amount.toLocaleString()} ₪
+                                    </span>
+                                    <button class="delete-btn" onclick="deleteTransaction('${t.id}')">✕</button>
+                                </div>
+                            </li>
+                        `;
+                    });
+
+                    catBox.innerHTML = `
+                        <div class="category-header">
+                            <span>${group.name}</span>
+                            <span class="category-total">סה״כ: ${group.totalSum.toLocaleString()} ₪</span>
+                        </div>
+                        <ul class="item-list">${itemsHtml}</ul>
+                    `;
+                    groupedList.appendChild(catBox);
+                });
+            }
+
+            const netBalance = totalIncome - totalExpense;
+            const targetPercent = currentUserData.targetPercent || 80;
+            const usedPercent = totalIncome > 0 ? ((totalExpense / totalIncome) * 100) : 0;
+
+            totalIncomeEl.textContent = `${totalIncome.toLocaleString()} ₪`;
+            totalExpenseEl.textContent = `${totalExpense.toLocaleString()} ₪`;
+            netBalanceEl.textContent = `${netBalance.toLocaleString()} ₪`;
+            usedPercentEl.textContent = `${usedPercent.toFixed(1)}%`;
+
+            progressBar.style.width = `${Math.min(usedPercent, 100)}%`;
+
+            if (usedPercent > targetPercent || netBalance < 0) {
+                targetStatus.textContent = `🚨 אזהרה: חריגה מהיעד! ניצול של ${usedPercent.toFixed(1)}% מתוך יעד של ${targetPercent}%.`;
+                targetStatus.style.color = 'var(--danger)';
+                progressBar.style.backgroundColor = 'var(--danger)';
+            } else {
+                targetStatus.textContent = `✅ עומד ביעד! נשאר לפחות ${(100 - targetPercent)}% לחיסכון.`;
+                targetStatus.style.color = 'var(--primary)';
+                progressBar.style.backgroundColor = 'var(--primary)';
+            }
         }
     </script>
 </body>
