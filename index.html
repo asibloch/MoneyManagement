@@ -145,7 +145,7 @@
 
         .password-wrapper input {
             width: 100%;
-            padding-left: 40px; /* מרווח כדי שהטקסט לא יעלה על העין */
+            padding-left: 40px;
             box-sizing: border-box;
         }
 
@@ -691,7 +691,6 @@
 
         function loginUser(userData) {
             currentUser = userData;
-            localStorage.setItem('app_current_user_email', userData.email);
 
             authSection.style.display = 'none';
             appSection.style.display = 'block';
@@ -706,11 +705,9 @@
 
         function logout() {
             currentUser = null;
-            localStorage.removeItem('app_current_user_email');
             authSection.style.display = 'block';
             appSection.style.display = 'none';
             authForm.reset();
-            // איפוס תצוגת סיסמה למצב חסוי
             authPassword.type = 'password';
             const btn = document.querySelector('.toggle-password-btn');
             if (btn) btn.textContent = '👁️';
@@ -743,16 +740,6 @@
 
             usersDB[currentUser.email] = currentUser;
             localStorage.setItem('app_users_db', JSON.stringify(usersDB));
-        }
-
-        function checkExistingSession() {
-            const savedEmail = localStorage.getItem('app_current_user_email');
-            if (savedEmail) {
-                let usersDB = JSON.parse(localStorage.getItem('app_users_db')) || {};
-                if (usersDB[savedEmail]) {
-                    loginUser(usersDB[savedEmail]);
-                }
-            }
         }
 
         // --- Auto Keyword Match ---
@@ -881,7 +868,6 @@
 
             const netBalance = totalIncome - totalExpense;
             const targetPercent = parseFloat(targetPercentInput.value) || 80;
-            const targetExpenseMax = (totalIncome * targetPercent) / 100;
             const usedPercent = totalIncome > 0 ? (totalExpense / totalIncome) * 100 : 0;
 
             // Render Totals Card
@@ -1040,9 +1026,6 @@
                 listEl.appendChild(div);
             });
         }
-
-        // On Page Load
-        checkExistingSession();
     </script>
 </body>
 </html>
