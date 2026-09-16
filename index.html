@@ -2,7 +2,7 @@
 <html lang="he" dir="rtl">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>ניהול תקציב אישי</title>
     
     <!-- Firebase SDKs -->
@@ -31,20 +31,31 @@
             --input-bg: #1a202c;
         }
 
+        /* 1. מניעת גלישה הרמטית ברמת כל האלמנטים */
         *, *::before, *::after {
             box-sizing: border-box;
+            max-width: 100%;
+        }
+
+        /* 2. חסימת גלילה אופקית ב-HTML וב-BODY */
+        html, body {
+            width: 100%;
+            max-width: 100%;
+            overflow-x: hidden !important;
+            margin: 0;
+            padding: 0;
         }
 
         body {
             font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
             background-color: var(--bg-color);
             color: var(--text-color);
-            margin: 0;
             padding: 12px;
             display: flex;
             justify-content: center;
             transition: background-color 0.3s, color 0.3s;
-            overflow-x: hidden;
+            word-wrap: break-word;
+            overflow-wrap: break-word;
         }
 
         .container {
@@ -54,7 +65,7 @@
 
         .auth-container {
             max-width: 400px;
-            margin: 20px auto;
+            margin: 10px auto;
             width: 100%;
         }
 
@@ -62,12 +73,13 @@
             display: flex;
             justify-content: space-between;
             align-items: center;
-            margin-bottom: 20px;
-            gap: 10px;
+            margin-bottom: 15px;
+            gap: 8px;
+            flex-wrap: wrap; /* מאפשר לרדת שורה במסכים ממש קטנים */
         }
 
         .user-greeting {
-            font-size: 1.1rem;
+            font-size: 1rem;
             font-weight: bold;
             color: var(--accent);
             margin-top: 4px;
@@ -76,11 +88,13 @@
         .user-actions {
             display: flex;
             align-items: center;
-            gap: 8px;
-            flex-shrink: 0;
+            gap: 6px;
         }
 
-        h1 { margin: 0; font-size: 1.5rem; }
+        h1 { 
+            margin: 0; 
+            font-size: 1.3rem; 
+        }
 
         .btn-small {
             padding: 6px 10px;
@@ -106,16 +120,16 @@
 
         .card {
             background-color: var(--card-bg);
-            padding: 16px;
+            padding: 14px;
             border-radius: 12px;
             box-shadow: 0 4px 6px rgba(0, 0, 0, 0.05);
-            margin-bottom: 16px;
+            margin-bottom: 14px;
             width: 100%;
         }
 
         h2 {
             margin-top: 0;
-            font-size: 1.1rem;
+            font-size: 1.05rem;
             color: var(--text-color);
             border-bottom: 2px solid var(--border-color);
             padding-bottom: 8px;
@@ -125,18 +139,22 @@
             display: flex;
             flex-direction: column;
             gap: 10px;
-            margin-top: 15px;
+            margin-top: 12px;
+            width: 100%;
         }
 
+        /* שדות הטופס יופיעו תמיד בטור יחיד בנייד */
         .form-row {
-            display: grid;
-            grid-template-columns: 1fr 1fr;
+            display: flex;
+            flex-direction: column;
             gap: 10px;
+            width: 100%;
         }
 
-        @media (max-width: 480px) {
+        @media (min-width: 500px) {
             .form-row {
-                grid-template-columns: 1fr;
+                display: grid;
+                grid-template-columns: 1fr 1fr;
             }
         }
 
@@ -148,18 +166,19 @@
             background-color: var(--input-bg);
             color: var(--text-color);
             width: 100%;
+            min-width: 0; /* מונע מאלמנטים של flex/grid לפרוץ חצי מסך */
         }
 
         input:focus, select:focus { outline: none; border-color: var(--accent); }
 
-        /* עיצוב שדה סיסמה עם עינית */
+        /* שדה סיסמה עם עינית */
         .password-wrapper {
             position: relative;
             width: 100%;
         }
 
         .password-wrapper input {
-            padding-left: 40px; /* מרווח בשביל העינית ב-LTR/RTL */
+            padding-left: 40px;
         }
 
         .toggle-password {
@@ -177,10 +196,6 @@
             width: auto;
         }
 
-        .toggle-password:hover {
-            opacity: 1;
-        }
-
         button.btn-primary {
             background-color: var(--primary);
             color: white;
@@ -189,10 +204,13 @@
             cursor: pointer;
         }
 
-        button.btn-primary:hover { opacity: 0.9; }
-
         .checkbox-label {
-            display: flex; align-items: center; gap: 8px; font-size: 0.9rem; cursor: pointer; margin-top: 5px;
+            display: flex; 
+            align-items: center; 
+            gap: 8px; 
+            font-size: 0.9rem; 
+            cursor: pointer; 
+            margin-top: 4px;
         }
 
         .checkbox-label input {
@@ -200,41 +218,85 @@
         }
 
         .summary-grid {
-            display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-top: 15px;
+            display: grid; 
+            grid-template-columns: 1fr 1fr; 
+            gap: 8px; 
+            margin-top: 12px;
         }
 
         .summary-item {
-            background-color: var(--bg-color); padding: 10px; border-radius: 8px; text-align: center;
+            background-color: var(--bg-color); 
+            padding: 10px 6px; 
+            border-radius: 8px; 
+            text-align: center;
+            font-size: 0.85rem;
         }
 
-        .summary-item span { display: block; font-size: 1.15rem; font-weight: bold; margin-top: 4px; }
+        .summary-item span { 
+            display: block; 
+            font-size: 1.05rem; 
+            font-weight: bold; 
+            margin-top: 4px; 
+        }
+        
         .income-text { color: var(--primary); }
         .expense-text { color: var(--danger); }
 
         .progress-container {
-            width: 100%; background-color: var(--border-color); border-radius: 8px; height: 12px; margin-top: 8px; overflow: hidden;
+            width: 100%; 
+            background-color: var(--border-color); 
+            border-radius: 8px; 
+            height: 10px; 
+            margin-top: 8px; 
+            overflow: hidden;
         }
 
         .progress-bar { height: 100%; width: 0%; background-color: var(--primary); transition: width 0.3s; }
 
         .category-group {
             background-color: var(--bg-color);
-            border-right: 6px solid var(--theme-color, #3498db);
-            border-radius: 8px; padding: 12px; margin-bottom: 12px;
+            border-right: 5px solid var(--theme-color, #3498db);
+            border-radius: 8px; 
+            padding: 10px; 
+            margin-bottom: 10px;
+            width: 100%;
         }
 
-        .category-header { display: flex; justify-content: space-between; align-items: center; font-weight: bold; font-size: 0.95rem; margin-bottom: 6px; }
-        .category-actions { display: flex; align-items: center; gap: 8px; }
-        .category-total { font-size: 0.8rem; color: white; background-color: var(--theme-color, #3498db); padding: 2px 8px; border-radius: 12px; white-space: nowrap; }
+        .category-header { 
+            display: flex; 
+            justify-content: space-between; 
+            align-items: center; 
+            font-weight: bold; 
+            font-size: 0.9rem; 
+            margin-bottom: 6px; 
+        }
+        
+        .category-actions { display: flex; align-items: center; gap: 6px; }
+        .category-total { font-size: 0.75rem; color: white; background-color: var(--theme-color, #3498db); padding: 2px 6px; border-radius: 10px; white-space: nowrap; }
 
-        ul.item-list { list-style: none; padding: 0; margin: 0; }
-        ul.item-list li { display: flex; justify-content: space-between; align-items: center; padding: 8px 0; border-bottom: 1px solid var(--border-color); gap: 8px; }
+        ul.item-list { list-style: none; padding: 0; margin: 0; width: 100%; }
+        ul.item-list li { 
+            display: flex; 
+            justify-content: space-between; 
+            align-items: center; 
+            padding: 8px 0; 
+            border-bottom: 1px solid var(--border-color); 
+            gap: 6px; 
+            font-size: 0.85rem;
+            min-width: 0;
+        }
+        
+        ul.item-list li span:first-child {
+            overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: nowrap;
+        }
+
         ul.item-list li:last-child { border-bottom: none; }
 
-        .delete-btn { background: none; border: none; color: var(--subtext-color); cursor: pointer; font-size: 1.1rem; width: auto; padding: 4px 8px; }
-        .delete-btn:hover { color: var(--danger); }
-
-        .auth-toggle-link { color: var(--accent); cursor: pointer; text-align: center; font-size: 0.9rem; margin-top: 10px; }
+        .delete-btn { background: none; border: none; color: var(--subtext-color); cursor: pointer; font-size: 1rem; width: auto; padding: 2px 6px; }
+        
+        .auth-toggle-link { color: var(--accent); cursor: pointer; text-align: center; font-size: 0.85rem; margin-top: 8px; }
         .error-message { color: var(--danger); font-size: 0.85rem; margin-top: 5px; text-align: center; }
         .loading-text { text-align: center; color: var(--subtext-color); font-size: 0.9rem; margin-top: 10px; }
     </style>
@@ -302,8 +364,8 @@
                     <span id="totalExpense" class="expense-text">₪0</span>
                 </div>
             </div>
-            <div style="margin-top: 15px;">
-                <div style="display: flex; justify-content: space-between; font-size: 0.9rem;">
+            <div style="margin-top: 12px;">
+                <div style="display: flex; justify-content: space-between; font-size: 0.85rem;">
                     <span>ניצול התקציב:</span>
                     <span id="budgetPercent">0%</span>
                 </div>
@@ -377,7 +439,6 @@
         let currentUser = null;
         let transactions = [];
 
-        // טעינה ראשונית
         window.onload = function() {
             updateCategories();
             const savedUser = localStorage.getItem('budgetUser');
@@ -387,19 +448,17 @@
             }
         };
 
-        // פונקציית הצגה/הסתרה של סיסמה בעזרת העינית
         function togglePasswordVisibility(inputId, iconElement) {
             const passwordInput = document.getElementById(inputId);
             if (passwordInput.type === "password") {
                 passwordInput.type = "text";
-                iconElement.textContent = "🙈"; // אייקון של עיניים מכוסות בלחיצה
+                iconElement.textContent = "🙈";
             } else {
                 passwordInput.type = "password";
                 iconElement.textContent = "👁️";
             }
         }
 
-        // ניהול תצוגות התחברות/הרשמה
         function showRegister() {
             document.getElementById('loginForm').style.display = 'none';
             document.getElementById('registerForm').style.display = 'flex';
@@ -414,7 +473,6 @@
             document.getElementById('authError').textContent = '';
         }
 
-        // הרשמת משתמש
         async function handleRegister(e) {
             e.preventDefault();
             const name = document.getElementById('regName').value.trim();
@@ -440,7 +498,6 @@
             }
         }
 
-        // התחברות משתמש
         async function handleLogin(e) {
             e.preventDefault();
             const email = document.getElementById('loginEmail').value.trim().toLowerCase();
@@ -476,7 +533,6 @@
             loadTransactions();
         }
 
-        // טעינת תנועות מ-Firestore
         function loadTransactions() {
             document.getElementById('loadingText').style.display = 'block';
             db.collection('users').doc(currentUser.email).collection('transactions')
@@ -492,7 +548,6 @@
                 });
         }
 
-        // עדכון רשימת קטגוריות בטופס
         function updateCategories() {
             const type = document.getElementById('transType').value;
             const select = document.getElementById('transCategory');
@@ -505,7 +560,6 @@
             });
         }
 
-        // הוספת תנועה
         async function handleAddTransaction(e) {
             e.preventDefault();
             const type = document.getElementById('transType').value;
@@ -532,14 +586,12 @@
             document.getElementById('transFixed').checked = false;
         }
 
-        // מחיקת תנועה
         async function deleteTransaction(id) {
             if (confirm("האם למחוק תנועה זו?")) {
                 await db.collection('users').doc(currentUser.email).collection('transactions').doc(id).delete();
             }
         }
 
-        // רינדור וחישוב נתונים
         function renderApp() {
             let totalIncome = 0;
             let totalExpense = 0;
@@ -562,13 +614,11 @@
             document.getElementById('totalIncome').textContent = `₪${totalIncome.toLocaleString()}`;
             document.getElementById('totalExpense').textContent = `₪${totalExpense.toLocaleString()}`;
 
-            // עדכון סרגל ניצול התקציב
             const percent = totalIncome > 0 ? Math.min(Math.round((totalExpense / totalIncome) * 100), 100) : 0;
             document.getElementById('budgetPercent').textContent = `${percent}%`;
             document.getElementById('progressBar').style.width = `${percent}%`;
             document.getElementById('progressBar').style.backgroundColor = percent > 90 ? 'var(--danger)' : 'var(--primary)';
 
-            // רינדור קטגוריות
             const catContainer = document.getElementById('categoriesList');
             catContainer.innerHTML = '';
 
@@ -587,7 +637,7 @@
                     itemsHtml += `
                         <li>
                             <span>${item.title} ${item.isFixed ? '📌' : ''}</span>
-                            <div>
+                            <div style="display: flex; align-items: center; gap: 4px; flex-shrink: 0;">
                                 <span>₪${item.amount.toLocaleString()}</span>
                                 <button class="delete-btn" onclick="deleteTransaction('${item.id}')">🗑️</button>
                             </div>
@@ -609,7 +659,6 @@
             });
         }
 
-        // מצב לילה/יום
         function toggleTheme() {
             const currentTheme = document.body.getAttribute('data-theme');
             const newTheme = currentTheme === 'dark' ? 'light' : 'dark';
