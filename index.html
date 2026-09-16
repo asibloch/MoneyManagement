@@ -511,8 +511,8 @@
         </div>
 
         <div id="forgotPasswordCard" class="card" style="display: none;">
-            <h2>🔄 איפוס סיסמה</h2>
-            <p style="font-size: 0.85rem; color: var(--subtext-color);">הזן את האימייל המשויך לחשבון שלך כדי לאפס את הסיסמה מיידית.</p>
+            <h2>🔄 שחזור ואיפוס סיסמה</h2>
+            <p style="font-size: 0.85rem; color: var(--subtext-color);">הזן את האימייל של החשבון שלך כדי לאפס את הסיסמה מיד.</p>
             <form id="forgotForm" class="form-group">
                 <input type="email" id="forgotEmail" placeholder="כתובת אימייל" required>
                 <input type="password" id="newResetPassword" placeholder="סיסמה חדשה (לפחות 6 תווים)" minlength="6" required>
@@ -1055,7 +1055,7 @@
             const usedPercent = totalIncome > 0 ? (totalExpense / totalIncome) * 100 : 0;
 
             totalIncomeEl.textContent = `${totalIncome.toLocaleString()} ₪`;
-            totalExpenseEl.textContent =`${totalExpense.toLocaleString()} ₪`;
+            totalExpenseEl.textContent = `${totalExpense.toLocaleString()} ₪`;
             netBalanceEl.textContent = `${netBalance.toLocaleString()} ₪`;
             usedPercentEl.textContent = `${usedPercent.toFixed(1)}%`;
 
@@ -1071,7 +1071,6 @@
                 targetStatus.style.color = 'var(--subtext-color)';
             }
 
-            // עדכון דיאגרמת העוגה
             updatePieChart(filtered);
 
             groupedList.innerHTML = '';
@@ -1138,9 +1137,8 @@
             }
         }
 
-        // ניהול ציור והתאמת דיאגרמת הפאי
         function updatePieChart(filteredTransactions) {
-            const chartType = chartTypeFilter.value; // 'expense' או 'income'
+            const chartType = chartTypeFilter.value;
             const activeCategories = [];
             const dataValues = [];
             const backgroundColors = [];
@@ -1164,7 +1162,6 @@
             }
 
             if (dataValues.length === 0) {
-                // הצגת עוגה ריקה במקרה אין נתונים
                 pieChartInstance = new Chart(ctx, {
                     type: 'pie',
                     data: {
@@ -1198,7 +1195,6 @@
                             }
                         }
                     },
-                    // אינטראקציה: לחיצה על חלק בעוגה פותחת את הפירוט לעומק
                     onClick: (event, elements) => {
                         if (elements.length > 0) {
                             const index = elements[0].index;
@@ -1210,7 +1206,6 @@
             });
         }
 
-        // פתיחת מודאל צפייה לעומק לקטגוריה שנבחרה מהעוגה
         function openCategoryDetailModal(categoryName, filteredTransactions, type) {
             const modalTitle = document.getElementById('modalCategoryTitle');
             const modalContent = document.getElementById('modalCategoryContent');
@@ -1256,7 +1251,6 @@
 
         function deleteTransactionFromModal(id, categoryName, type) {
             deleteTransaction(id);
-            // רענון המודאל המקוף מיד לאחר המחיקה
             const selMonth = parseInt(selectedMonthEl.value);
             const selYear = parseInt(selectedYearEl.value);
             const searchTerm = searchInput.value.trim().toLowerCase();
