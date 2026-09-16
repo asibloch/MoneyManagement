@@ -455,6 +455,12 @@
             margin-top: 5px;
         }
 
+        .success-message {
+            color: var(--primary);
+            font-size: 0.85rem;
+            margin-top: 5px;
+        }
+
         .incognito-alert {
             background-color: #fff3cd;
             color: #856404;
@@ -469,9 +475,10 @@
 </head>
 <body>
 
-    <!-- מסך התחברות / הרשמה -->
+    <!-- מסך התחברות / הרשמה / איפוס סיסמה -->
     <div id="authSection" class="container auth-container">
-        <div class="card">
+        <!-- טופס התחברות / הרשמה -->
+        <div id="loginRegisterCard" class="card">
             <h2 id="authTitle">🔑 התחברות למערכת</h2>
             <div id="incognitoAlert" class="incognito-alert">
                 ℹ️ גלישה בסתר פעילה: הנתונים יישמרו רק לסשן הנוכחי.
@@ -488,8 +495,29 @@
                 <div id="authError" class="error-message"></div>
                 <button type="submit" id="authSubmitBtn" class="btn-primary">התחבר</button>
             </form>
-            <div id="authToggleLink" class="auth-toggle-link" onclick="toggleAuthMode()">
-                אין לך חשבון? לחץ כאן להרשמה
+            <div style="display: flex; justify-content: space-between; margin-top: 10px;">
+                <div id="authToggleLink" class="auth-toggle-link" onclick="toggleAuthMode()">
+                    אין לך חשבון? הרשמה
+                </div>
+                <div class="auth-toggle-link" onclick="showForgotSection()" style="color: var(--subtext-color);">
+                    שכחת סיסמה?
+                </div>
+            </div>
+        </div>
+
+        <!-- טופס שכחתי סיסמה -->
+        <div id="forgotPasswordCard" class="card" style="display: none;">
+            <h2>🔄 איפוס סיסמה</h2>
+            <p style="font-size: 0.85rem; color: var(--subtext-color);">הזן את האימייל המשויך לחשבון שלך כדי לאפס את הסיסמה מיידית.</p>
+            <form id="forgotForm" class="form-group">
+                <input type="email" id="forgotEmail" placeholder="כתובת אימייל" required>
+                <input type="password" id="newResetPassword" placeholder="סיסמה חדשה (לפחות 6 תווים)" minlength="6" required>
+                <div id="forgotError" class="error-message"></div>
+                <div id="forgotSuccess" class="success-message"></div>
+                <button type="submit" class="btn-primary">עדכן סיסמה חדשה</button>
+            </form>
+            <div class="auth-toggle-link" onclick="showLoginSection()" style="margin-top: 15px;">
+                ⬅️ חזרה למסך התחברות
             </div>
         </div>
     </div>
@@ -654,7 +682,7 @@
                         } catch (e) {
                             return memoryStore[key] || null;
                         }
-                    } {
+                    } else {
                         return memoryStore[key] || null;
                     }
                 },
@@ -707,6 +735,9 @@
         // DOM Elements
         const authSection = document.getElementById('authSection');
         const appSection = document.getElementById('appSection');
+        const loginRegisterCard = document.getElementById('loginRegisterCard');
+        const forgotPasswordCard = document.getElementById('forgotPasswordCard');
+
         const authForm = document.getElementById('authForm');
         const authTitle = document.getElementById('authTitle');
         const authFullName = document.getElementById('authFullName');
@@ -715,6 +746,13 @@
         const authSubmitBtn = document.getElementById('authSubmitBtn');
         const authToggleLink = document.getElementById('authToggleLink');
         const authError = document.getElementById('authError');
+
+        const forgotForm = document.getElementById('forgotForm');
+        const forgotEmail = document.getElementById('forgotEmail');
+        const newResetPassword = document.getElementById('newResetPassword');
+        const forgotError = document.getElementById('forgotError');
+        const forgotSuccess = document.getElementById('forgotSuccess');
+
         const userGreeting = document.getElementById('userGreeting');
 
         const selectedMonthEl = document.getElementById('selectedMonth');
@@ -758,14 +796,28 @@
                 authFullName.style.display = 'block';
                 authFullName.required = true;
                 authSubmitBtn.textContent = 'הירשם והתחבר';
-                authToggleLink.textContent = 'כבר יש לך חשבון? לחץ כאן להתחברות';
+                authToggleLink.textContent = 'כבר יש לך חשבון? התחבר';
             } else {
                 authTitle.textContent = '🔑 התחברות למערכת';
                 authFullName.style.display = 'none';
                 authFullName.required = false;
                 authSubmitBtn.textContent = 'התחבר';
-                authToggleLink.textContent = 'אין לך חשבון? לחץ כאן להרשמה';
+                authToggleLink.textContent = 'אין לך חשבון? הרשמה';
             }
+        }
+
+        function showForgotSection() {
+            loginRegisterCard.style.display = 'none';
+            forgotPasswordCard.style.display = 'block';
+            forgotError.textContent = '';
+            forgotSuccess.textContent = '';
+            forgotForm.reset();
+        }
+
+        function showLoginSection() {
+            forgotPasswordCard.style.display = 'none';
+            loginRegisterCard.style.display = 'block';
+            authError.textContent = '';
         }
 
         function getUsersDB() {
@@ -775,6 +827,36 @@
                 return {};
             }
         }
+
+        // מטפל באיפוס סיסמה ישירות מול מאגר המשתמשים המקומי
+        forgotForm.addEventListener('submit', (e) => {
+            e.preventDefault();
+            forgotError.textContent = '';
+            forgotSuccess.textContent = '';
+
+            const email = forgotEmail.value.trim().toLowerCase();
+            const newPass = newResetPassword.value;
+
+            if (newPass.length < 6) {
+                forgotError.textContent = 'הסיסמה החדשה חייבת להכיל לפחות 6 תווים!';
+                return;
+            }
+
+            let usersDB = getUsersDB();
+            if (!usersDB[email]) {
+                forgotError.textContent = 'כתובת האימייל הזו אינה קיימת במערכת.';
+                return;
+            }
+
+            usersDB[email].password = newPass;
+            safeStorage.setItem('app_users_db', JSON.stringify(usersDB));
+
+            forgotSuccess.textContent = 'הסיסמה עודכנה בהצלחה! מעביר אותך להתחברות...';
+            setTimeout(() => {
+                showLoginSection();
+                authEmail.value = email;
+            }, 2000);
+        });
 
         authForm.addEventListener('submit', (e) => {
             e.preventDefault();
