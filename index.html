@@ -510,11 +510,12 @@
             </div>
         </div>
 
+        <!-- טופס איפוס סיסמה נקי עם שורת מייל בלבד -->
         <div id="forgotPasswordCard" class="card" style="display: none;">
             <h2>🔄 שחזור ואיפוס סיסמה</h2>
             <p style="font-size: 0.85rem; color: var(--subtext-color);">הזן את האימייל שלך ונשלח אליך קישור מאובטח לאיפוס הסיסמה דרך Firebase.</p>
             <form id="forgotForm" class="form-group">
-                <input type="email" id="forgotEmail" placeholder="כתובת אימייל" required>
+                <input type="email" id="forgotEmail" placeholder="כתובת אימייל" autocomplete="email" required>
                 <div id="forgotError" class="error-message"></div>
                 <div id="forgotSuccess" class="success-message"></div>
                 <button type="submit" class="btn-primary">שלח קישור לאיפוס במייל</button>
