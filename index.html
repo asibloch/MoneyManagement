@@ -512,12 +512,13 @@
 
         <div id="forgotPasswordCard" class="card" style="display: none;">
             <h2>🔄 שחזור ואיפוס סיסמה</h2>
-            <p style="font-size: 0.85rem; color: var(--subtext-color);">הזן את האימייל שלך ונשלח אליך קישור מאובטח לאיפוס הסיסמה דרך Firebase.</p>
+            <p style="font-size: 0.85rem; color: var(--subtext-color);">הזן את האימייל של החשבון שלך כדי לאפס את הסיסמה מיד.</p>
             <form id="forgotForm" class="form-group">
                 <input type="email" id="forgotEmail" placeholder="כתובת אימייל" required>
+                <input type="password" id="newResetPassword" placeholder="סיסמה חדשה (לפחות 6 תווים)" minlength="6" required>
                 <div id="forgotError" class="error-message"></div>
                 <div id="forgotSuccess" class="success-message"></div>
-                <button type="submit" class="btn-primary">שלח קישור לאיפוס במייל</button>
+                <button type="submit" class="btn-primary">עדכן סיסמה חדשה</button>
             </form>
             <div class="auth-toggle-link" onclick="showLoginSection()" style="margin-top: 15px;">
                 ⬅️ חזרה למסך התחברות
@@ -686,24 +687,7 @@
         </div>
     </div>
 
-    <!-- חיבור ל-Firebase SDK והלוגיקה הראשית -->
-    <script type="module">
-        import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
-        import { getAuth, signInWithEmailAndPassword, createUserWithEmailAndPassword, sendPasswordResetEmail, signOut, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-auth.js";
-
-        // הגדרות ה-Firebase האמיתיות שלך
-        const firebaseConfig = {
-            apiKey: "AIzaSyDxrq20TrCGAsSwHdkcAQS7WBl5xmKAu44",
-            authDomain: "moneymanagement-84522.firebaseapp.com",
-            projectId: "moneymanagement-84522",
-            storageBucket: "moneymanagement-84522.firebasestorage.app",
-            messagingSenderId: "846355309588",
-            appId: "1:846355309588:web:91ea4a97640b6eaaf73301"
-        };
-
-        const app = initializeApp(firebaseConfig);
-        const auth = getAuth(app);
-
+    <script>
         const safeStorage = (function() {
             let memoryStore = {};
             let isLocalStorageSupported = true;
@@ -782,6 +766,7 @@
 
         const forgotForm = document.getElementById('forgotForm');
         const forgotEmail = document.getElementById('forgotEmail');
+        const newResetPassword = document.getElementById('newResetPassword');
         const forgotError = document.getElementById('forgotError');
         const forgotSuccess = document.getElementById('forgotSuccess');
 
@@ -809,7 +794,7 @@
         const filterPaymentMethod = document.getElementById('filterPaymentMethod');
         const chartTypeFilter = document.getElementById('chartTypeFilter');
 
-        window.togglePasswordVisibility = function() {
+        function togglePasswordVisibility() {
             const btn = document.querySelector('.toggle-password-btn');
             if (authPassword.type === 'password') {
                 authPassword.type = 'text';
@@ -820,7 +805,7 @@
             }
         }
 
-        window.toggleAuthMode = function() {
+        function toggleAuthMode() {
             isSignUpMode = !isSignUpMode;
             authError.textContent = '';
             if (isSignUpMode) {
@@ -838,7 +823,7 @@
             }
         }
 
-        window.showForgotSection = function() {
+        function showForgotSection() {
             loginRegisterCard.style.display = 'none';
             forgotPasswordCard.style.display = 'block';
             forgotError.textContent = '';
@@ -846,7 +831,7 @@
             forgotForm.reset();
         }
 
-        window.showLoginSection = function() {
+        function showLoginSection() {
             forgotPasswordCard.style.display = 'none';
             loginRegisterCard.style.display = 'block';
             authError.textContent = '';
@@ -857,109 +842,85 @@
             catch (e) { return {}; }
         }
 
-        // שליחת מייל איפוס סיסמה מאובטח דרך Firebase
         forgotForm.addEventListener('submit', (e) => {
             e.preventDefault();
             forgotError.textContent = '';
             forgotSuccess.textContent = '';
-            const email = forgotEmail.value.trim();
+            const email = forgotEmail.value.trim().toLowerCase();
+            const newPass = newResetPassword.value;
 
-            sendPasswordResetEmail(auth, email)
-                .then(() => {
-                    forgotSuccess.textContent = 'קישור לאיפוס סיסמה נשלח בהצלחה למייל שלך! בדוק תיבת דואר נכנס.';
-                    forgotForm.reset();
-                })
-                .catch((error) => {
-                    console.error("Firebase Password Reset Error:", error);
-                    let errorMsg = `שגיאה בשליחת המייל: ${error.message}`;
-                    if (error.code === 'auth/user-not-found') {
-                        errorMsg = "כתובת המייל הזו אינה קיימת במערכת ב-Firebase.";
-                    } else if (error.code === 'auth/invalid-email') {
-                        errorMsg = "כתובת המייל לא תקינה.";
-                    }
-                    forgotError.textContent = errorMsg;
-                });
+            if (newPass.length < 6) {
+                forgotError.textContent = 'הסיסמה החדשה חייבת להכיל לפחות 6 תווים!';
+                return;
+            }
+
+            let usersDB = getUsersDB();
+            if (!usersDB[email]) {
+                forgotError.textContent = 'כתובת האימייל הזו אינה קיימת במערכת.';
+                return;
+            }
+
+            usersDB[email].password = newPass;
+            safeStorage.setItem('app_users_db', JSON.stringify(usersDB));
+            forgotSuccess.textContent = 'הסיסמה עודכנה בהצלחה! מעביר אותך להתחברות...';
+            setTimeout(() => { showLoginSection(); authEmail.value = email; }, 2000);
         });
 
-        // טיפול בהתחברות / הרשמה דרך Firebase Auth ושמירת נתוני המשתמש
-        authForm.addEventListener('submit', async (e) => {
+        authForm.addEventListener('submit', (e) => {
             e.preventDefault();
             authError.textContent = '';
             const email = authEmail.value.trim().toLowerCase();
             const password = authPassword.value;
 
-            try {
-                if (isSignUpMode) {
-                    const fullName = authFullName.value.trim();
-                    if (!fullName) { authError.textContent = 'נא להזין שם מלא'; return; }
-                    
-                    await createUserWithEmailAndPassword(auth, email, password);
-                    let usersDB = getUsersDB();
-                    usersDB[email] = {
-                        email, fullName,
-                        categories: defaultCategoriesList,
-                        categoryColors: {},
-                        categoryBudgets: {},
-                        targetPercent: 80,
-                        transactions: []
-                    };
-                    safeStorage.setItem('app_users_db', JSON.stringify(usersDB));
-                } else {
-                    await signInWithEmailAndPassword(auth, email, password);
-                }
-            } catch (error) {
-                console.error("Firebase Auth Error:", error);
-                let errorMsg = `שגיאת התחברות: ${error.message}`;
-                if (error.code === 'auth/invalid-credential' || error.code === 'auth/wrong-password' || error.code === 'auth/user-not-found' || error.code === 'auth/invalid-email') {
-                    errorMsg = "שם המשתמש או הסיסמה שגויים.";
-                } else if (error.code === 'auth/email-already-in-use') {
-                    errorMsg = "כתובת המייל כבר תפוסה במערכת.";
-                } else if (error.code === 'auth/weak-password') {
-                    errorMsg = "הסיסמה חלשה מדי (חייבת לפחות 6 תווים).";
-                }
-                authError.textContent = errorMsg;
+            if (password.length < 6) {
+                authError.textContent = 'הסיסמה חייבת להכיל לפחות 6 תווים!';
+                return;
             }
-        });
 
-        // מעקב אחר מצב ההתחברות מול Firebase
-        onAuthStateChanged(auth, (user) => {
-            if (user) {
-                let usersDB = getUsersDB();
-                const email = user.email.toLowerCase();
-                if (!usersDB[email]) {
-                    usersDB[email] = {
-                        email,
-                        fullName: user.displayName || email.split('@')[0],
-                        categories: defaultCategoriesList,
-                        categoryColors: {},
-                        categoryBudgets: {},
-                        targetPercent: 80,
-                        transactions: []
-                    };
-                    safeStorage.setItem('app_users_db', JSON.stringify(usersDB));
-                }
-                currentUser = usersDB[email];
-                userGreeting.textContent = `היי, ${currentUser.fullName || email}`;
-                loadUserData(currentUser);
-                initDateSelectors();
-                renderCategoriesSelect();
-                updateUI();
+            let usersDB = getUsersDB();
+            if (isSignUpMode) {
+                const fullName = authFullName.value.trim();
+                if (!fullName) { authError.textContent = 'נא להזין שם מלא'; return; }
+                if (usersDB[email]) { authError.textContent = 'משתמש עם אימייל זה כבר קיים במערכת!'; return; }
 
-                authSection.style.display = 'none';
-                appSection.style.display = 'block';
+                usersDB[email] = {
+                    email, password, fullName,
+                    categories: defaultCategoriesList,
+                    categoryColors: {},
+                    categoryBudgets: {},
+                    targetPercent: 80,
+                    transactions: []
+                };
+                safeStorage.setItem('app_users_db', JSON.stringify(usersDB));
+                loginUser(usersDB[email]);
             } else {
-                currentUser = null;
-                appSection.style.display = 'none';
-                authSection.style.display = 'block';
+                if (!usersDB[email] || usersDB[email].password !== password) {
+                    authError.textContent = 'פרטי התחברות שגויים (אימייל או סיסמה לא נכונים)';
+                    return;
+                }
+                loginUser(usersDB[email]);
             }
         });
 
-        window.logout = function() {
-            signOut(auth).then(() => {
-                authSection.style.display = 'block';
-                appSection.style.display = 'none';
-                authForm.reset();
-            });
+        function loginUser(userData) {
+            currentUser = userData;
+            authSection.style.display = 'none';
+            appSection.style.display = 'block';
+            userGreeting.textContent = `היי, ${userData.fullName}`;
+            loadUserData(userData);
+            initDateSelectors();
+            renderCategoriesSelect();
+            updateUI();
+        }
+
+        function logout() {
+            currentUser = null;
+            authSection.style.display = 'block';
+            appSection.style.display = 'none';
+            authForm.reset();
+            authPassword.type = 'password';
+            const btn = document.querySelector('.toggle-password-btn');
+            if (btn) btn.textContent = '👁️';
         }
 
         function loadUserData(userData) {
@@ -984,7 +945,7 @@
             currentUser.categoryBudgets = categoryBudgets;
             currentUser.targetPercent = parseFloat(targetPercentInput.value) || 80;
             currentUser.transactions = transactions;
-            usersDB[currentUser.email.toLowerCase()] = currentUser;
+            usersDB[currentUser.email] = currentUser;
             safeStorage.setItem('app_users_db', JSON.stringify(usersDB));
         }
 
@@ -1065,7 +1026,7 @@
             });
         }
 
-        window.updateUI = function() {
+        function updateUI() {
             if (!currentUser) return;
 
             const selMonth = parseInt(selectedMonthEl.value);
@@ -1245,107 +1206,35 @@
             });
         }
 
-        window.deleteTransaction = function(id) {
-            transactions = transactions.filter(t => t.id !== id);
-            saveCurrentUserData();
-            updateUI();
-        }
-
-        window.changeCategoryColor = function(cat, color) {
-            categoryColors[cat] = color;
-            saveCurrentUserData();
-            updateUI();
-        }
-
-        window.openModal = function() {
-            document.getElementById('manageCatModal').style.display = 'flex';
-            renderManageCategoriesList();
-        }
-
-        window.closeModal = function() {
-            document.getElementById('manageCatModal').style.display = 'none';
-            saveCurrentUserData();
-            renderCategoriesSelect();
-            updateUI();
-        }
-
-        function renderManageCategoriesList() {
-            const listContainer = document.getElementById('manageCatList');
-            listContainer.innerHTML = '';
-            categories.forEach(cat => {
-                const itemDiv = document.createElement('div');
-                itemDiv.className = 'manage-cat-item';
-                const currentBudget = categoryBudgets[cat] || '';
-                itemDiv.innerHTML = `
-                    <div class="manage-cat-row">
-                        <strong>${cat}</strong>
-                        <button type="button" class="delete-btn" onclick="removeCategory('${cat}')" style="font-size: 0.9rem;">🗑️ מחק</button>
-                    </div>
-                    <input type="number" placeholder="תקציב יעד חודשי (0 ללא הגבלה)" value="${currentBudget}" onchange="updateCategoryBudget('${cat}', this.value)" style="padding: 8px;">
-                `;
-                listContainer.appendChild(itemDiv);
-            });
-        }
-
-        window.saveNewCategory = function() {
-            const input = document.getElementById('newCatName');
-            const name = input.value.trim();
-            if (!name) return;
-            if (categories.includes(name)) {
-                alert('הקטגוריה כבר קיימת!');
-                return;
-            }
-            categories.push(name);
-            categoryColors[name] = palette[categories.length % palette.length];
-            input.value = '';
-            renderManageCategoriesList();
-            saveCurrentUserData();
-        }
-
-        window.removeCategory = function(cat) {
-            if (categories.length <= 1) {
-                alert('חייבת להישאר לפחות קטגוריה אחת במערכת!');
-                return;
-            }
-            categories = categories.filter(c => c !== cat);
-            delete categoryBudgets[cat];
-            delete categoryColors[cat];
-            renderManageCategoriesList();
-            saveCurrentUserData();
-        }
-
-        window.updateCategoryBudget = function(cat, val) {
-            const num = parseFloat(val);
-            if (isNaN(num) || num <= 0) {
-                delete categoryBudgets[cat];
-            } else {
-                categoryBudgets[cat] = num;
-            }
-            saveCurrentUserData();
-        }
-
-        window.openCategoryDetailModal = function(categoryName, filteredTransactions, type) {
+        function openCategoryDetailModal(categoryName, filteredTransactions, type) {
             const modalTitle = document.getElementById('modalCategoryTitle');
             const modalContent = document.getElementById('modalCategoryContent');
             
-            modalTitle.textContent = `פירוט תנועות עבור: ${categoryName}`;
-            const catItems = filteredTransactions.filter(t => t.category === categoryName && t.type === type);
+            modalTitle.textContent = `פירוט תנועות: ${categoryName}`;
 
-            if (catItems.length === 0) {
-                modalContent.innerHTML = '<p style="text-align: center; color: var(--subtext-color);">אין תנועות להצגה.</p>';
+            const items = filteredTransactions.filter(t => t.category === categoryName && t.type === type);
+
+            if (items.length === 0) {
+                modalContent.innerHTML = '<p style="text-align: center; color: var(--subtext-color);">אין תנועות בקטגוריה זו.</p>';
             } else {
                 let html = '<ul class="item-list">';
-                catItems.forEach(item => {
+                items.forEach(item => {
                     const isIncome = item.type === 'income';
                     html += `
                         <li>
                             <div class="item-details">
-                                <strong>${item.desc}</strong>
+                                <div>
+                                    ${item.isFixed ? '<span class="fixed-badge">קבוע</span>' : ''}
+                                    <strong>${item.desc}</strong>
+                                </div>
                                 <span class="item-subtext">${item.paymentMethod}</span>
                             </div>
-                            <span class="${isIncome ? 'tag-income' : 'tag-expense'}">
-                                ${isIncome ? '+' : '-'}${item.amount.toLocaleString()} ₪
-                            </span>
+                            <div style="display: flex; align-items: center; gap: 8px;">
+                                <span class="${isIncome ? 'tag-income' : 'tag-expense'}">
+                                    ${isIncome ? '+' : '-'}${item.amount.toLocaleString()} ₪
+                                </span>
+                                <button class="delete-btn" onclick="deleteTransactionFromModal('${item.id}', '${categoryName}', '${type}')">🗑️</button>
+                            </div>
                         </li>
                     `;
                 });
@@ -1356,22 +1245,93 @@
             document.getElementById('categoryDetailModal').style.display = 'flex';
         }
 
-        window.closeCategoryDetailModal = function() {
+        function closeCategoryDetailModal() {
             document.getElementById('categoryDetailModal').style.display = 'none';
         }
 
-        window.toggleTheme = function() {
-            const currentTheme = document.documentElement.getAttribute('data-theme');
-            const newTheme = currentTheme === 'dark' ? 'light' : 'dark';
-            if (newTheme === 'dark') {
-                document.documentElement.setAttribute('data-theme', 'dark');
-                document.getElementById('themeToggle').textContent = '☀️ מצב יום';
+        function deleteTransactionFromModal(id, categoryName, type) {
+            deleteTransaction(id);
+            const selMonth = parseInt(selectedMonthEl.value);
+            const selYear = parseInt(selectedYearEl.value);
+            const searchTerm = searchInput.value.trim().toLowerCase();
+            const selPayment = filterPaymentMethod.value;
+
+            const filtered = transactions.filter(t => {
+                const isCorrectPeriod = (t.month === selMonth && t.year === selYear) || 
+                                        (t.isFixed && (t.year < selYear || (t.year === selYear && t.month <= selMonth)));
+                const matchesSearch = t.desc.toLowerCase().includes(searchTerm);
+                const matchesPayment = (selPayment === 'ALL' || t.paymentMethod === selPayment);
+                return isCorrectPeriod && matchesSearch && matchesPayment;
+            });
+
+            openCategoryDetailModal(categoryName, filtered, type);
+        }
+
+        function deleteTransaction(id) {
+            transactions = transactions.filter(t => t.id !== id);
+            saveCurrentUserData();
+            updateUI();
+        }
+
+        function changeCategoryColor(cat, color) {
+            categoryColors[cat] = color;
+            saveCurrentUserData();
+            updateUI();
+        }
+
+        function toggleTheme() {
+            const currentTheme = document.body.getAttribute('data-theme');
+            if (currentTheme === 'dark') {
+                document.body.removeAttribute('data-theme');
             } else {
-                document.documentElement.removeAttribute('data-theme');
-                document.getElementById('themeToggle').textContent = '🌙 מצב לילה';
+                document.body.setAttribute('data-theme', 'dark');
+            }
+            updateUI();
+        }
+
+        function openModal() {
+            renderManageCatList();
+            document.getElementById('manageCatModal').style.display = 'flex';
+        }
+
+        function closeModal() {
+            document.getElementById('manageCatModal').style.display = 'none';
+            renderCategoriesSelect();
+            updateUI();
+        }
+
+        function saveNewCategory() {
+            const nameInput = document.getElementById('newCatName');
+            const newName = nameInput.value.trim();
+            if (newName && !categories.includes(newName)) {
+                categories.push(newName);
+                categoryColors[newName] = palette[categories.length % palette.length];
+                saveCurrentUserData();
+                renderManageCatList();
+                nameInput.value = '';
             }
         }
-    </script>
 
+        function updateCategoryBudget(cat, val) {
+            categoryBudgets[cat] = parseFloat(val) || 0;
+            saveCurrentUserData();
+        }
+
+        function renderManageCatList() {
+            const listEl = document.getElementById('manageCatList');
+            listEl.innerHTML = '';
+            categories.forEach(cat => {
+                const div = document.createElement('div');
+                div.className = 'manage-cat-item';
+                div.innerHTML = `
+                    <div class="manage-cat-row">
+                        <span><strong>${cat}</strong></span>
+                    </div>
+                    <input type="number" placeholder="הזן תקציב מקסימלי" value="${categoryBudgets[cat] || ''}" onchange="updateCategoryBudget('${cat}', this.value)">
+                `;
+                listEl.appendChild(div);
+            });
+        }
+    </script>
 </body>
 </html>
